@@ -7,7 +7,6 @@ local/
 *.js.map
 playwright-report/
 test-results/
-services.json
 .DS_Store
 coverage/
 .nyc_output/
