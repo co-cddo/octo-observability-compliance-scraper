@@ -1,0 +1,81 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<h1 class="govuk-heading-xl">{{ title }}</h1>
+
+{% if not workerRunning %}
+<div class="govuk-warning-text">
+  <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+  <strong class="govuk-warning-text__text">
+    <span class="govuk-visually-hidden">Warning</span>
+    Worker is not running. Queue data is unavailable. Start the full application with <code>npm start</code> or <code>npm run dev</code>.
+  </strong>
+</div>
+{% else %}
+
+<table class="govuk-table">
+  <caption class="govuk-table__caption govuk-table__caption--m">Job queues</caption>
+  <thead class="govuk-table__head">
+    <tr class="govuk-table__row">
+      <th class="govuk-table__header" scope="col">Queue</th>
+      <th class="govuk-table__header govuk-table__header--numeric" scope="col">Queued</th>
+      <th class="govuk-table__header govuk-table__header--numeric" scope="col">Retry</th>
+      <th class="govuk-table__header govuk-table__header--numeric" scope="col">Active</th>
+      <th class="govuk-table__header govuk-table__header--numeric" scope="col">Completed</th>
+      <th class="govuk-table__header govuk-table__header--numeric" scope="col">Cancelled</th>
+      <th class="govuk-table__header govuk-table__header--numeric" scope="col">Failed</th>
+    </tr>
+  </thead>
+  <tbody class="govuk-table__body">
+    {% for q in queues %}
+    <tr class="govuk-table__row">
+      <th class="govuk-table__header" scope="row">{{ q.label }}</th>
+      <td class="govuk-table__cell govuk-table__cell--numeric">
+        {% if q.created > 0 %}
+          <strong class="govuk-tag govuk-tag--blue">{{ q.created }}</strong>
+        {% else %}
+          {{ q.created }}
+        {% endif %}
+      </td>
+      <td class="govuk-table__cell govuk-table__cell--numeric">
+        {% if q.retry > 0 %}
+          <strong class="govuk-tag govuk-tag--yellow">{{ q.retry }}</strong>
+        {% else %}
+          {{ q.retry }}
+        {% endif %}
+      </td>
+      <td class="govuk-table__cell govuk-table__cell--numeric">
+        {% if q.active > 0 %}
+          <strong class="govuk-tag govuk-tag--yellow">{{ q.active }}</strong>
+        {% else %}
+          {{ q.active }}
+        {% endif %}
+      </td>
+      <td class="govuk-table__cell govuk-table__cell--numeric">{{ q.completed }}</td>
+      <td class="govuk-table__cell govuk-table__cell--numeric">{{ q.cancelled }}</td>
+      <td class="govuk-table__cell govuk-table__cell--numeric">
+        {% if q.failed > 0 %}
+          <strong class="govuk-tag govuk-tag--red">{{ q.failed }}</strong>
+        {% else %}
+          {{ q.failed }}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p class="govuk-body-s govuk-!-color-secondary">
+  Counts are live from the pg-boss job table. Completed jobs are retained for 14 days before deletion. Refresh to update.
+</p>
+
+<h2 class="govuk-heading-m">Actions</h2>
+
+<p class="govuk-body">
+  <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-trigger-url="/trigger" data-module="govuk-button">Check all services</button>
+</p>
+
+{% endif %}
+
+{% endblock %}

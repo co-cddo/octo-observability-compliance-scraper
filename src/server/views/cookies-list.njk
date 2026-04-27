@@ -1,0 +1,92 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<h1 class="govuk-heading-xl">{{ title }}</h1>
+
+<p class="govuk-body">
+  UK public sector services are required to obtain informed consent before setting non-essential cookies, in line with
+  <a class="govuk-link" href="https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guide-to-pecr/guidance-on-cookies-and-similar-technologies/">PECR</a>
+  and UK GDPR. This page shows whether each service has a detectable consent mechanism, which analytics tools are in use,
+  and any tracking IDs found. Click a service name for the full detail.
+</p>
+
+<form method="get" action="/cookies" class="govuk-!-margin-bottom-4">
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-one-quarter">
+      <div class="govuk-form-group govuk-!-margin-bottom-2">
+        <label class="govuk-label govuk-label--s" for="organisation">Organisation</label>
+        <select class="govuk-select govuk-!-width-full" id="organisation" name="organisation" onchange="this.form.submit()">
+          <option value="">All organisations</option>
+          {% for org in organisations %}
+            <option value="{{ org }}" {% if currentFilters.organisation == org %}selected{% endif %}>{{ org }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    {% if currentFilters.organisation %}
+    <div class="govuk-grid-column-one-quarter" style="padding-top: 30px;">
+      <a href="/cookies" class="govuk-link">Clear filters</a>
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+<p class="govuk-body">Showing {{ results | length }} of {{ total }} service(s){% if totalPages > 1 %} — page {{ page }} of {{ totalPages }}{% endif %}.</p>
+
+{% if results.length > 0 %}
+<table class="govuk-table">
+  <caption class="govuk-table__caption govuk-table__caption--s">Cookie compliance results</caption>
+  <thead class="govuk-table__head">
+    <tr class="govuk-table__row">
+      <th class="govuk-table__header" scope="col">Service</th>
+      <th class="govuk-table__header" scope="col">Organisation</th>
+      <th class="govuk-table__header" scope="col">Consent</th>
+      <th class="govuk-table__header" scope="col">Framework</th>
+      <th class="govuk-table__header" scope="col">Analytics tools</th>
+      <th class="govuk-table__header" scope="col">Last checked</th>
+    </tr>
+  </thead>
+  <tbody class="govuk-table__body">
+    {% for r in results %}
+    <tr class="govuk-table__row">
+      <td class="govuk-table__cell">
+        <a href="/services/{{ r.serviceSlug }}#cookies" class="govuk-link">{{ r.serviceName }}</a>
+      </td>
+      <td class="govuk-table__cell">{{ r.organisation }}</td>
+      <td class="govuk-table__cell">
+        {% if r.consentMechanismPresent === true %}
+          <strong class="govuk-tag govuk-tag--green">Yes</strong>
+        {% elif r.consentMechanismPresent === false %}
+          <strong class="govuk-tag govuk-tag--red">No</strong>
+        {% else %}
+          <strong class="govuk-tag govuk-tag--grey">Unknown</strong>
+          {% if r.scrapeStatus == 'no_link_found' %}
+            <br><span class="govuk-body-s">No cookie policy found</span>
+          {% elif r.scrapeStatus == 'scrape_error' %}
+            <br><span class="govuk-body-s">{{ r.errorMessage or 'Could not access page' }}</span>
+          {% elif r.scrapeStatus == 'bedrock_error' %}
+            <br><span class="govuk-body-s">Page found but could not extract data</span>
+          {% elif r.scrapeStatus == 'no_data_extracted' %}
+            <br><span class="govuk-body-s">{{ r.errorMessage or 'Page did not contain a cookie policy' }}</span>
+          {% endif %}
+        {% endif %}
+      </td>
+      <td class="govuk-table__cell">{{ r.consentFramework or '—' }}</td>
+      <td class="govuk-table__cell govuk-body-s">{{ r.analyticsTools | join(', ') if r.analyticsTools.length > 0 else '—' }}</td>
+      <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if totalPages > 1 %}
+{% set basePath = '/cookies' %}
+{% include "pagination.njk" %}
+{% endif %}
+
+{% else %}
+<p class="govuk-body">No results match the current filters.</p>
+{% endif %}
+
+{% endblock %}

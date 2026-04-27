@@ -1,0 +1,89 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<h1 class="govuk-heading-xl">Privacy notice</h1>
+
+<p class="govuk-body">
+  This service is run by the Department for Science, Innovation and Technology (DSIT). It is an internal tool used by civil servants to monitor the digital compliance of UK government services.
+</p>
+<p class="govuk-body">
+  This notice explains what personal data we collect, why we collect it, and your rights.
+</p>
+
+<h2 class="govuk-heading-l">What data we collect</h2>
+
+<h3 class="govuk-heading-m">When you sign in</h3>
+<p class="govuk-body">
+  We collect your name and email address from DSIT Internal Access (the identity provider). This is stored in your session while you are signed in.
+</p>
+
+<h3 class="govuk-heading-m">Audit trail</h3>
+<p class="govuk-body">
+  When you make changes to compliance URLs — for example, manually overriding a link to an accessibility statement — your username is recorded alongside the change. This is retained for audit purposes so that the origin of any data modification can be traced.
+</p>
+
+<h3 class="govuk-heading-m">Session data</h3>
+<p class="govuk-body">
+  Your session (including sign-in state and any conversation history in the Insights tool) is stored in a secure PostgreSQL database hosted in AWS. Sessions expire after 2 hours.
+</p>
+
+<h2 class="govuk-heading-l">Why we collect it</h2>
+
+<p class="govuk-body">
+  We collect this data under the lawful basis of <strong>public task</strong> — specifically, to enable authorised DSIT staff to access the service and to maintain an accurate audit trail of data changes.
+</p>
+
+<h2 class="govuk-heading-l">How long we keep it</h2>
+
+<table class="govuk-table">
+  <thead class="govuk-table__head">
+    <tr class="govuk-table__row">
+      <th scope="col" class="govuk-table__header">Data</th>
+      <th scope="col" class="govuk-table__header">Retention</th>
+    </tr>
+  </thead>
+  <tbody class="govuk-table__body">
+    <tr class="govuk-table__row">
+      <td class="govuk-table__cell">Active session (name, email)</td>
+      <td class="govuk-table__cell">2 hours (deleted on sign-out or expiry)</td>
+    </tr>
+    <tr class="govuk-table__row">
+      <td class="govuk-table__cell">Audit trail (username against URL changes)</td>
+      <td class="govuk-table__cell">Retained for the lifetime of the service</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 class="govuk-heading-l">Who we share it with</h2>
+
+<p class="govuk-body">
+  Your data is not shared outside of DSIT or the hosting infrastructure (AWS, located in the EU West region). It is not used for advertising, profiling, or any purpose other than operating this service.
+</p>
+
+<h2 class="govuk-heading-l">Your rights</h2>
+
+<p class="govuk-body">
+  Under UK GDPR you have the right to:
+</p>
+<ul class="govuk-list govuk-list--bullet">
+  <li>request a copy of the data we hold about you</li>
+  <li>ask us to correct inaccurate data</li>
+  <li>ask us to delete your data (where we are not required to retain it)</li>
+  <li>object to how we are using your data</li>
+</ul>
+
+<p class="govuk-body">
+  To exercise any of these rights, contact <a class="govuk-link" href="mailto:observability@dsit.gov.uk">observability@dsit.gov.uk</a>.
+</p>
+<p class="govuk-body">
+  You also have the right to <a class="govuk-link" href="https://ico.org.uk/make-a-complaint/">make a complaint to the ICO</a>.
+</p>
+
+<h2 class="govuk-heading-l">Changes to this notice</h2>
+
+<p class="govuk-body">
+  We may update this notice from time to time. Any changes will be published at this URL.
+</p>
+
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<h1 class="govuk-heading-xl">Compliance Scraper</h1>
+
+<p class="govuk-body-l">
+  A tool for monitoring published compliance information across UK government digital services.
+</p>
+
+<p class="govuk-body">
+  This service automatically checks accessibility statements, cookie policies, and privacy notices
+  from government websites and extracts key data, including:
+</p>
+
+<ul class="govuk-list govuk-list--bullet">
+  <li>WCAG standard tested against and stated compliance level</li>
+  <li>Statement preparation, review, and test dates</li>
+  <li>Areas of non-compliance and remediation commitments</li>
+  <li>Cookie consent mechanisms and analytics tools</li>
+  <li>Privacy notice data controllers and legal basis</li>
+</ul>
+
+<p class="govuk-body">
+  Results are collected daily and stored historically, allowing teams to track improvements over time.
+</p>
+
+<div class="govuk-inset-text">
+  This is an internal tool for authorised civil servants. Data is self-reported by service teams via their accessibility statements and is extracted automatically — no guarantee of accuracy is made.
+</div>
+
+{% if user %}
+  <a href="/accessibility" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
+    View accessibility results
+  </a>
+{% else %}
+  <a href="/auth/login" role="button" draggable="false" class="govuk-button" data-module="govuk-button">
+    Sign in with Internal Access
+  </a>
+{% endif %}
+
+{% endblock %}

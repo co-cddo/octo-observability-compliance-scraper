@@ -1,0 +1,363 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<a href="/accessibility" class="govuk-back-link">Back to results</a>
+
+<h1 class="govuk-heading-xl">{{ service.name }}</h1>
+
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row">
+    <dt class="govuk-summary-list__key">Organisation</dt>
+    <dd class="govuk-summary-list__value">{{ service.organisation }}</dd>
+  </div>
+  <div class="govuk-summary-list__row">
+    <dt class="govuk-summary-list__key">Live service URL</dt>
+    <dd class="govuk-summary-list__value">
+      <a href="{{ service.liveServiceUrl }}" class="govuk-link" target="_blank" rel="noopener noreferrer">{{ service.liveServiceUrl }}</a>
+    </dd>
+  </div>
+  {% if service.phase %}
+  <div class="govuk-summary-list__row">
+    <dt class="govuk-summary-list__key">Phase</dt>
+    <dd class="govuk-summary-list__value">{{ service.phase }}</dd>
+  </div>
+  {% endif %}
+  {% if service.theme %}
+  <div class="govuk-summary-list__row">
+    <dt class="govuk-summary-list__key">Theme</dt>
+    <dd class="govuk-summary-list__value">{{ service.theme }}</dd>
+  </div>
+  {% endif %}
+</dl>
+
+<p class="govuk-body">
+  <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-trigger-url="/services/{{ service.slug }}/trigger" data-module="govuk-button">Check all pages</button>
+</p>
+
+{# --- Compliance URLs --- #}
+
+<h2 class="govuk-heading-l">Compliance page URLs</h2>
+
+{% macro urlRow(type, label, urlData, history) %}
+<div class="govuk-summary-list__row">
+  <dt class="govuk-summary-list__key">{{ label }}</dt>
+  <dd class="govuk-summary-list__value">
+    {% if urlData and urlData.url %}
+      <a href="{{ urlData.url }}" class="govuk-link" target="_blank" rel="noopener noreferrer">{{ urlData.url | truncate(80) }}</a>
+      <br>
+      <span class="govuk-body-s govuk-!-margin-top-1">
+        {% if urlData.source == 'manual' %}
+          Manual override by {{ urlData.changedByName or urlData.changedByEmail or 'unknown' }}
+        {% else %}
+          Discovered automatically
+        {% endif %}
+        — {{ urlData.createdAt | string | truncate(10, true, '') }}
+      </span>
+    {% elif urlData %}
+      <strong class="govuk-tag govuk-tag--grey">{{ urlData.status | replace("_", " ") | capitalize }}</strong>
+    {% else %}
+      <strong class="govuk-tag govuk-tag--grey">Not yet checked</strong>
+    {% endif %}
+  </dd>
+  <dd class="govuk-summary-list__actions">
+    <details class="govuk-details govuk-!-margin-bottom-0" data-module="govuk-details">
+      <summary class="govuk-details__summary">
+        <span class="govuk-details__summary-text">Change / History</span>
+      </summary>
+      <div class="govuk-details__text">
+        <form method="post" action="/services/{{ service.slug }}/urls/{{ type }}" class="govuk-!-margin-bottom-3">
+          <div class="govuk-form-group">
+            <label class="govuk-label" for="url-{{ type }}">Override URL</label>
+            <input class="govuk-input govuk-input--width-30" id="url-{{ type }}" name="url" type="url"
+              value="{{ urlData.url if urlData and urlData.url else '' }}" placeholder="https://...">
+          </div>
+          <button type="submit" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-module="govuk-button">Save and check</button>
+        </form>
+        {% if history and history.length > 0 %}
+        <table class="govuk-table govuk-table--small-text-until-tablet">
+          <caption class="govuk-table__caption govuk-visually-hidden">Compliance URL history</caption>
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th class="govuk-table__header" scope="col">Date</th>
+              <th class="govuk-table__header" scope="col">URL</th>
+              <th class="govuk-table__header" scope="col">Source</th>
+              <th class="govuk-table__header" scope="col">Status</th>
+              <th class="govuk-table__header" scope="col">Changed by</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            {% for h in history %}
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell govuk-body-s">{{ h.createdAt | string | truncate(10, true, '') }}</td>
+              <td class="govuk-table__cell govuk-body-s">{{ h.url | truncate(60) if h.url else '—' }}</td>
+              <td class="govuk-table__cell">{{ h.source }}</td>
+              <td class="govuk-table__cell">{{ h.status }}</td>
+              <td class="govuk-table__cell govuk-body-s">{{ h.changedByName or h.changedByEmail or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    </details>
+  </dd>
+</div>
+{% endmacro %}
+
+<dl class="govuk-summary-list">
+  {{ urlRow('accessibility', 'Accessibility statement', urls.accessibility, urlHistory.accessibility) }}
+  {{ urlRow('cookies', 'Cookie policy', urls.cookies, urlHistory.cookies) }}
+  {{ urlRow('privacy', 'Privacy notice', urls.privacy, urlHistory.privacy) }}
+</dl>
+
+{# --- Accessibility --- #}
+
+<h2 class="govuk-heading-l" id="accessibility">Accessibility</h2>
+
+{% if accessibility.latest %}
+  {% set a = accessibility.latest %}
+  <dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Stated compliance</dt>
+      <dd class="govuk-summary-list__value">
+        {% if a.complianceStatus == 'fully_compliant' %}
+          <strong class="govuk-tag govuk-tag--green">Fully compliant</strong>
+        {% elif a.complianceStatus == 'partially_compliant' %}
+          <strong class="govuk-tag govuk-tag--yellow">Partially compliant</strong>
+        {% elif a.complianceStatus == 'not_compliant' %}
+          <strong class="govuk-tag govuk-tag--red">Not compliant</strong>
+        {% else %}
+          <strong class="govuk-tag govuk-tag--grey">Unknown</strong>
+        {% endif %}
+      </dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">WCAG standard</dt>
+      <dd class="govuk-summary-list__value">{{ a.wcagStandard or '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Date prepared</dt>
+      <dd class="govuk-summary-list__value">{{ a.datePrepared or '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Date reviewed</dt>
+      <dd class="govuk-summary-list__value">{{ a.dateReviewed or '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Date tested</dt>
+      <dd class="govuk-summary-list__value">{{ a.dateTested or '—' }}</dd>
+    </div>
+    {% if a.errorMessage %}
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Error</dt>
+      <dd class="govuk-summary-list__value">{{ a.errorMessage }}</dd>
+    </div>
+    {% endif %}
+  </dl>
+
+  {% if a.areasOfNonCompliance and a.areasOfNonCompliance.length > 0 %}
+  <h3 class="govuk-heading-s">Areas of non-compliance</h3>
+  <ul class="govuk-list govuk-list--bullet">
+    {% for area in a.areasOfNonCompliance %}
+      <li>{{ area }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if a.remediationCommitments and a.remediationCommitments.length > 0 %}
+  <h3 class="govuk-heading-s">Remediation commitments</h3>
+  <ul class="govuk-list govuk-list--bullet">
+    {% for c in a.remediationCommitments %}
+      <li>{{ c }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if accessibility.history.length > 1 %}
+  <details class="govuk-details" data-module="govuk-details">
+    <summary class="govuk-details__summary"><span class="govuk-details__summary-text">History ({{ accessibility.history.length }})</span></summary>
+    <div class="govuk-details__text">
+      <table class="govuk-table">
+        <caption class="govuk-table__caption govuk-visually-hidden">Accessibility check history</caption>
+        <thead class="govuk-table__head"><tr class="govuk-table__row">
+          <th class="govuk-table__header" scope="col">Checked</th>
+          <th class="govuk-table__header" scope="col">Status</th>
+          <th class="govuk-table__header" scope="col">Compliance</th>
+        </tr></thead>
+        <tbody class="govuk-table__body">
+          {% for r in accessibility.history %}
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+            <td class="govuk-table__cell">{{ r.scrapeStatus }}</td>
+            <td class="govuk-table__cell">{{ r.complianceStatus or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endif %}
+
+  <p class="govuk-body"><button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-trigger-url="/services/{{ service.slug }}/trigger/accessibility" data-module="govuk-button">Check again</button></p>
+{% else %}
+  <p class="govuk-body">No accessibility results yet.</p>
+{% endif %}
+
+{# --- Cookies --- #}
+
+<h2 class="govuk-heading-l" id="cookies">Cookies</h2>
+
+{% if cookies.latest %}
+  {% set c = cookies.latest %}
+  <dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Consent mechanism present</dt>
+      <dd class="govuk-summary-list__value">
+        {% if c.consentMechanismPresent === true %}
+          <strong class="govuk-tag govuk-tag--green">Yes</strong>
+        {% elif c.consentMechanismPresent === false %}
+          <strong class="govuk-tag govuk-tag--red">No</strong>
+        {% else %}
+          <strong class="govuk-tag govuk-tag--grey">Unknown</strong>
+        {% endif %}
+      </dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Consent framework</dt>
+      <dd class="govuk-summary-list__value">{{ c.consentFramework or '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Analytics tools</dt>
+      <dd class="govuk-summary-list__value">{{ c.analyticsTools | join(', ') if c.analyticsTools.length > 0 else '—' }}</dd>
+    </div>
+    {% if c.trackingIds and c.trackingIds | length > 0 %}
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Tracking IDs</dt>
+      <dd class="govuk-summary-list__value">
+        {% for key, val in c.trackingIds %}{{ key }}: {{ val }}{% if not loop.last %}, {% endif %}{% endfor %}
+      </dd>
+    </div>
+    {% endif %}
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Cookies listed</dt>
+      <dd class="govuk-summary-list__value">{{ c.cookiesListed | join(', ') if c.cookiesListed.length > 0 else '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Cookie purposes</dt>
+      <dd class="govuk-summary-list__value">{{ c.cookiePurposes or '—' }}</dd>
+    </div>
+    {% if c.errorMessage %}
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Error</dt>
+      <dd class="govuk-summary-list__value">{{ c.errorMessage }}</dd>
+    </div>
+    {% endif %}
+  </dl>
+
+  {% if cookies.history.length > 1 %}
+  <details class="govuk-details" data-module="govuk-details">
+    <summary class="govuk-details__summary"><span class="govuk-details__summary-text">History ({{ cookies.history.length }})</span></summary>
+    <div class="govuk-details__text">
+      <table class="govuk-table">
+        <caption class="govuk-table__caption govuk-visually-hidden">Cookie check history</caption>
+        <thead class="govuk-table__head"><tr class="govuk-table__row">
+          <th class="govuk-table__header" scope="col">Checked</th>
+          <th class="govuk-table__header" scope="col">Status</th>
+          <th class="govuk-table__header" scope="col">Consent</th>
+        </tr></thead>
+        <tbody class="govuk-table__body">
+          {% for r in cookies.history %}
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+            <td class="govuk-table__cell">{{ r.scrapeStatus }}</td>
+            <td class="govuk-table__cell">{% if r.consentMechanismPresent %}Yes{% elif r.consentMechanismPresent === false %}No{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endif %}
+
+  <p class="govuk-body"><button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-trigger-url="/services/{{ service.slug }}/trigger/cookies" data-module="govuk-button">Check again</button></p>
+{% else %}
+  <p class="govuk-body">No cookie results yet.</p>
+{% endif %}
+
+{# --- Privacy --- #}
+
+<h2 class="govuk-heading-l" id="privacy">Privacy</h2>
+
+{% if privacy.latest %}
+  {% set p = privacy.latest %}
+  <dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Data controller(s)</dt>
+      <dd class="govuk-summary-list__value">
+        {% if p.dataControllers and p.dataControllers.length > 0 %}
+          <ul class="govuk-list">
+            {% for dc in p.dataControllers %}
+              <li>{{ dc.name }}{% if dc.contact %} — {{ dc.contact }}{% endif %}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          —
+        {% endif %}
+      </dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Legal basis</dt>
+      <dd class="govuk-summary-list__value">{{ p.legalBasis or '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Data shared with</dt>
+      <dd class="govuk-summary-list__value">{{ p.dataSharedWith | join(', ') if p.dataSharedWith.length > 0 else '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Retention period</dt>
+      <dd class="govuk-summary-list__value">{{ p.retentionPeriod or '—' }}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Last updated</dt>
+      <dd class="govuk-summary-list__value">{{ p.lastUpdatedDate or '—' }}</dd>
+    </div>
+    {% if p.errorMessage %}
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Error</dt>
+      <dd class="govuk-summary-list__value">{{ p.errorMessage }}</dd>
+    </div>
+    {% endif %}
+  </dl>
+
+  {% if privacy.history.length > 1 %}
+  <details class="govuk-details" data-module="govuk-details">
+    <summary class="govuk-details__summary"><span class="govuk-details__summary-text">History ({{ privacy.history.length }})</span></summary>
+    <div class="govuk-details__text">
+      <table class="govuk-table">
+        <caption class="govuk-table__caption govuk-visually-hidden">Privacy check history</caption>
+        <thead class="govuk-table__head"><tr class="govuk-table__row">
+          <th class="govuk-table__header" scope="col">Checked</th>
+          <th class="govuk-table__header" scope="col">Status</th>
+          <th class="govuk-table__header" scope="col">Data controller</th>
+        </tr></thead>
+        <tbody class="govuk-table__body">
+          {% for r in privacy.history %}
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+            <td class="govuk-table__cell">{{ r.scrapeStatus }}</td>
+            <td class="govuk-table__cell">{{ r.dataControllers[0].name if r.dataControllers and r.dataControllers.length > 0 else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endif %}
+
+  <p class="govuk-body"><button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-trigger-url="/services/{{ service.slug }}/trigger/privacy" data-module="govuk-button">Check again</button></p>
+{% else %}
+  <p class="govuk-body">No privacy results yet.</p>
+{% endif %}
+
+{% endblock %}

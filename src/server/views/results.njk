@@ -1,0 +1,120 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<h1 class="govuk-heading-xl">{{ title }}</h1>
+
+<p class="govuk-body">
+  Accessibility statements are required for all public sector websites and apps under the
+  <a class="govuk-link" href="https://www.legislation.gov.uk/uksi/2018/952/contents/made">Public Sector Bodies Accessibility Regulations 2018</a>.
+  Each statement must declare compliance status against a WCAG standard and list any known issues.
+  This page shows what each service's accessibility statement claims — click a service name for the full detail.
+</p>
+
+<div class="govuk-inset-text">
+  Statuses shown here are extracted from each service's published accessibility statement — they reflect what the service team has declared, not an assessment by this tool.
+</div>
+
+<form method="get" action="/accessibility" class="govuk-!-margin-bottom-4">
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-one-quarter">
+      <div class="govuk-form-group govuk-!-margin-bottom-2">
+        <label class="govuk-label govuk-label--s" for="status">Stated compliance</label>
+        <select class="govuk-select govuk-!-width-full" id="status" name="status" onchange="this.form.submit()">
+          <option value="">All statuses</option>
+          <option value="fully_compliant" {% if currentFilters.status == 'fully_compliant' %}selected{% endif %}>Fully compliant</option>
+          <option value="partially_compliant" {% if currentFilters.status == 'partially_compliant' %}selected{% endif %}>Partially compliant</option>
+          <option value="not_compliant" {% if currentFilters.status == 'not_compliant' %}selected{% endif %}>Not compliant</option>
+          <option value="unknown" {% if currentFilters.status == 'unknown' %}selected{% endif %}>Unknown</option>
+        </select>
+      </div>
+    </div>
+    <div class="govuk-grid-column-one-quarter">
+      <div class="govuk-form-group govuk-!-margin-bottom-2">
+        <label class="govuk-label govuk-label--s" for="organisation">Organisation</label>
+        <select class="govuk-select govuk-!-width-full" id="organisation" name="organisation" onchange="this.form.submit()">
+          <option value="">All organisations</option>
+          {% for org in organisations %}
+            <option value="{{ org }}" {% if currentFilters.organisation == org %}selected{% endif %}>{{ org }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    {% if currentFilters.status or currentFilters.organisation %}
+    <div class="govuk-grid-column-one-quarter" style="padding-top: 30px;">
+      <a href="/accessibility" class="govuk-link">Clear filters</a>
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+<p class="govuk-body">Showing {{ results | length }} of {{ total }} service(s){% if totalPages > 1 %} — page {{ page }} of {{ totalPages }}{% endif %}.</p>
+
+{% if results.length > 0 %}
+<table class="govuk-table">
+  <caption class="govuk-table__caption govuk-table__caption--s">Accessibility compliance results</caption>
+  <thead class="govuk-table__head">
+    <tr class="govuk-table__row">
+      <th class="govuk-table__header" scope="col">Service</th>
+      <th class="govuk-table__header" scope="col">Organisation</th>
+      <th class="govuk-table__header" scope="col">Stated compliance</th>
+      <th class="govuk-table__header" scope="col">WCAG standard</th>
+      <th class="govuk-table__header" scope="col">Date reviewed</th>
+      <th class="govuk-table__header" scope="col">Statement</th>
+      <th class="govuk-table__header" scope="col">Last checked</th>
+    </tr>
+  </thead>
+  <tbody class="govuk-table__body">
+    {% for r in results %}
+    <tr class="govuk-table__row">
+      <td class="govuk-table__cell">
+        <a href="/services/{{ r.serviceSlug }}#accessibility" class="govuk-link">{{ r.serviceName }}</a>
+      </td>
+      <td class="govuk-table__cell">{{ r.organisation }}</td>
+      <td class="govuk-table__cell">
+        {% if r.complianceStatus == 'fully_compliant' %}
+          <strong class="govuk-tag govuk-tag--green">Fully compliant</strong>
+        {% elif r.complianceStatus == 'partially_compliant' %}
+          <strong class="govuk-tag govuk-tag--yellow">Partially compliant</strong>
+        {% elif r.complianceStatus == 'not_compliant' %}
+          <strong class="govuk-tag govuk-tag--red">Not compliant</strong>
+        {% else %}
+          <strong class="govuk-tag govuk-tag--grey">Unknown</strong>
+          {% if r.scrapeStatus == 'no_link_found' %}
+            <br><span class="govuk-body-s">No statement found</span>
+          {% elif r.scrapeStatus == 'scrape_error' %}
+            <br><span class="govuk-body-s">{{ r.errorMessage or 'Could not access page' }}</span>
+          {% elif r.scrapeStatus == 'bedrock_error' %}
+            <br><span class="govuk-body-s">Page found but could not extract data</span>
+          {% elif r.scrapeStatus == 'no_data_extracted' %}
+            <br><span class="govuk-body-s">{{ r.errorMessage or 'Page did not contain a statement' }}</span>
+          {% endif %}
+        {% endif %}
+      </td>
+      <td class="govuk-table__cell">{{ r.wcagStandard or '—' }}</td>
+      <td class="govuk-table__cell">{{ r.dateReviewed or '—' }}</td>
+      <td class="govuk-table__cell">
+        {% if r.accessibilityStatementUrl %}
+          <a href="{{ r.accessibilityStatementUrl }}" class="govuk-link" target="_blank" rel="noopener noreferrer">View</a>
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td class="govuk-table__cell govuk-body-s">
+        {{ r.scrapedAt | string | truncate(10, true, '') }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if totalPages > 1 %}
+{% set basePath = '/accessibility' %}
+{% include "pagination.njk" %}
+{% endif %}
+
+{% else %}
+<p class="govuk-body">No results match the current filters.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<h1 class="govuk-heading-xl">Cookies</h1>
+
+<p class="govuk-body">
+  Compliance Scraper puts small files (known as 'cookies') onto your computer to make the service work.
+</p>
+<p class="govuk-body">
+  Find out how to <a class="govuk-link" href="https://ico.org.uk/for-the-public/online/cookies/">manage cookies</a>.
+</p>
+
+<h2 class="govuk-heading-l">Essential cookies</h2>
+
+<p class="govuk-body">
+  This service only uses cookies that are strictly necessary to make it work. We do not use any analytics, advertising, or tracking cookies.
+</p>
+
+<h3 class="govuk-heading-m">Your session</h3>
+
+<p class="govuk-body">
+  We store a session cookie to keep you signed in while you use the service.
+</p>
+
+<table class="govuk-table">
+  <caption class="govuk-table__caption govuk-table__caption--s">Session cookie</caption>
+  <thead class="govuk-table__head">
+    <tr class="govuk-table__row">
+      <th scope="col" class="govuk-table__header">Name</th>
+      <th scope="col" class="govuk-table__header">Purpose</th>
+      <th scope="col" class="govuk-table__header">Expires</th>
+    </tr>
+  </thead>
+  <tbody class="govuk-table__body">
+    <tr class="govuk-table__row">
+      <td class="govuk-table__cell">connect.sid</td>
+      <td class="govuk-table__cell">Keeps you signed in and stores your preferences during your session</td>
+      <td class="govuk-table__cell">2 hours</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 class="govuk-heading-m">Authentication</h3>
+
+<p class="govuk-body">
+  When you sign in via DSIT Internal Access, the identity provider may set its own cookies. Those cookies are governed by the
+  <a class="govuk-link" href="https://sso.service.security.gov.uk">Internal Access service</a>, not by this service.
+</p>
+
+{% endblock %}

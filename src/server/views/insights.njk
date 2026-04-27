@@ -1,0 +1,191 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+
+<h1 class="govuk-heading-xl">Insights</h1>
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+
+    <div class="govuk-inset-text">
+      <p class="govuk-body">Ask questions about the compliance data. For example:</p>
+      <ul class="govuk-list govuk-list--bullet">
+        <li>Please provide a breakdown of which WCAG standards are targeted and the compliance rates</li>
+        <li>Please provide a breakdown of which analytics products are used by how many services</li>
+        <li>Which services use Google Analytics and what are their GA property IDs?</li>
+      </ul>
+    </div>
+
+    <div id="chat-area" style="min-height: 100px; margin-bottom: 20px;"></div>
+
+    <div id="loading" class="govuk-body govuk-!-color-secondary" style="display:none; margin-bottom: 10px;">
+      Thinking...
+    </div>
+
+    <form id="ask-form" novalidate>
+      <div class="govuk-form-group" id="question-group">
+        <label class="govuk-label govuk-label--s" for="question">Your question</label>
+        <textarea class="govuk-textarea" id="question" name="question" rows="2" style="margin-bottom: 8px;"></textarea>
+      </div>
+      <button type="submit" class="govuk-button" id="ask-button" data-module="govuk-button">Ask</button>
+    </form>
+
+    <p class="govuk-body-s">
+      <a href="#" id="clear-link" class="govuk-link">Clear conversation</a>
+    </p>
+
+  </div>
+</div>
+
+<style>
+  .insight-message {
+    margin-bottom: 20px;
+  }
+  .insight-message--user {
+    text-align: right;
+  }
+  .insight-message--user .insight-bubble {
+    display: inline-block;
+    background: #1d70b8;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 4px;
+    max-width: 80%;
+    text-align: left;
+  }
+  .insight-message--assistant .insight-bubble {
+    background: #f3f2f1;
+    padding: 14px 16px;
+    border-radius: 4px;
+    font-family: "GDS Transport", arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  .insight-bubble p { margin: 0 0 12px; }
+  .insight-bubble p:last-of-type { margin-bottom: 0; }
+  .insight-bubble ul, .insight-bubble ol { margin: 0 0 12px; padding-left: 24px; }
+  .insight-bubble li { margin-bottom: 4px; }
+  .insight-bubble table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.875rem; }
+  .insight-bubble th, .insight-bubble td { border: 1px solid #b1b4b6; padding: 6px 10px; text-align: left; }
+  .insight-bubble th { background: #f3f2f1; font-weight: bold; }
+  .insight-sql-details {
+    margin-top: 10px;
+    font-size: 0.875rem;
+  }
+  .insight-sql-details summary {
+    cursor: pointer;
+    color: #1d70b8;
+  }
+  .insight-sql-pre {
+    background: #0b0c0c;
+    color: #ffffff;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: monospace;
+    font-size: 0.8125rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-top: 8px;
+  }
+  .insight-row-count {
+    font-size: 0.875rem;
+    color: #505a5f;
+    margin-top: 4px;
+  }
+</style>
+
+<script>
+  const form = document.getElementById('ask-form');
+  const textarea = document.getElementById('question');
+  const button = document.getElementById('ask-button');
+  const chatArea = document.getElementById('chat-area');
+  const loading = document.getElementById('loading');
+  const clearLink = document.getElementById('clear-link');
+
+  function appendMessage(role, content, sql, rowCount) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'insight-message insight-message--' + role;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'insight-bubble';
+
+    if (role === 'user') {
+      bubble.textContent = content;
+    } else {
+      bubble.innerHTML = content;
+
+      if (sql) {
+        const details = document.createElement('details');
+        details.className = 'insight-sql-details';
+        const summary = document.createElement('summary');
+        summary.textContent = 'View SQL query';
+        const pre = document.createElement('pre');
+        pre.className = 'insight-sql-pre';
+        pre.textContent = sql;
+        details.appendChild(summary);
+        details.appendChild(pre);
+        bubble.appendChild(details);
+      }
+
+      if (typeof rowCount === 'number') {
+        const rc = document.createElement('p');
+        rc.className = 'insight-row-count';
+        rc.textContent = rowCount + ' row' + (rowCount !== 1 ? 's' : '') + ' returned';
+        bubble.appendChild(rc);
+      }
+    }
+
+    wrapper.appendChild(bubble);
+    chatArea.appendChild(wrapper);
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const question = textarea.value.trim();
+    if (!question) return;
+
+    appendMessage('user', question, null, null);
+    textarea.value = '';
+    button.disabled = true;
+    loading.style.display = 'block';
+
+    try {
+      const resp = await fetch('/insights/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+
+      const data = await resp.json();
+
+      if (data.error) {
+        appendMessage('assistant', 'Sorry, something went wrong: ' + data.error, null, null);
+      } else {
+        appendMessage('assistant', data.answer, data.sql, data.rowCount);
+      }
+    } catch (err) {
+      appendMessage('assistant', 'Sorry, a network error occurred.', null, null);
+    } finally {
+      button.disabled = false;
+      loading.style.display = 'none';
+      textarea.focus();
+    }
+  });
+
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.dispatchEvent(new Event('submit'));
+    }
+  });
+
+  clearLink.addEventListener('click', async function(e) {
+    e.preventDefault();
+    await fetch('/insights/clear', { method: 'POST' });
+    chatArea.innerHTML = '';
+  });
+</script>
+
+{% endblock %}
