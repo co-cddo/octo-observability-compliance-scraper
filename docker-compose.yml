@@ -15,11 +15,38 @@ services:
       timeout: 5s
       retries: 5
 
+  oidc-mock:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    ports:
+      - "8090:8090"
+    environment:
+      SERVER_PORT: "8090"
+      JSON_CONFIG: |
+        {
+          "interactiveLogin": false,
+          "tokenCallbacks": [{
+            "issuerId": "default",
+            "requestMappings": [{
+              "requestParam": "scope",
+              "match": "*",
+              "claims": {
+                "sub": "test-user",
+                "email": "test@example.gov.uk",
+                "email_verified": true,
+                "display_name": "Test User",
+                "name": "Test User"
+              }
+            }]
+          }]
+        }
+
   compliance-scraper:
     build: .
     depends_on:
       postgres:
         condition: service_healthy
+      oidc-mock:
+        condition: service_started
     env_file:
       - path: .env
         required: false
@@ -30,7 +57,10 @@ services:
       SERVICES_JSON_PATH: /app/services.json
       SEED_DATABASE: "true"
       NODE_ENV: development
-      APP_URL: http://localhost:3000
+      APP_URL: http://compliance-scraper:3000
+      SSO_ISSUER: http://oidc-mock:8090/default
+      SSO_CLIENT_ID: test-client
+      SSO_CLIENT_SECRET: test-secret
     ports:
       - "3000:3000"
     healthcheck:

@@ -3,6 +3,53 @@ import * as crypto from "crypto";
 import type { Config } from "../config";
 import "./sessionTypes";
 
+type OidcEndpoints = {
+  authorization_endpoint: string;
+  token_endpoint: string;
+  userinfo_endpoint: string;
+};
+
+let cachedEndpoints: OidcEndpoints | null = null;
+
+export async function discoverOidcEndpoints(
+  issuer: string,
+  retries = 5,
+): Promise<OidcEndpoints> {
+  if (cachedEndpoints) return cachedEndpoints;
+
+  const url = `${issuer}/.well-known/openid-configuration`;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      }
+      const doc = (await res.json()) as Record<string, unknown>;
+      cachedEndpoints = {
+        authorization_endpoint: doc["authorization_endpoint"] as string,
+        token_endpoint: doc["token_endpoint"] as string,
+        userinfo_endpoint: doc["userinfo_endpoint"] as string,
+      };
+      return cachedEndpoints;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < retries) {
+        const delay = 1000 * 2 ** attempt;
+        console.warn(
+          `[auth] OIDC discovery attempt ${attempt + 1} failed, retrying in ${delay}ms...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw new Error(
+    `OIDC discovery failed for ${issuer} after ${retries + 1} attempts: ${lastError?.message}`,
+  );
+}
+
 const ASSET_EXTENSION = /\.\w{2,5}$/;
 
 export function requireAuth(): RequestHandler {
@@ -18,25 +65,34 @@ export function requireAuth(): RequestHandler {
 export function authRouter(config: Config): Router {
   const router = Router();
 
-  router.get("/login", (req, res) => {
-    const state = crypto.randomBytes(32).toString("hex");
-    req.session.oauthState = state;
+  router.get("/login", async (req, res) => {
+    try {
+      const endpoints = await discoverOidcEndpoints(config.ssoIssuer);
+      const state = crypto.randomBytes(32).toString("hex");
+      req.session.oauthState = state;
 
-    const params = new URLSearchParams({
-      client_id: config.ssoClientId,
-      redirect_uri: `${config.appUrl}/auth/callback`,
-      response_type: "code",
-      scope: "openid email profile",
-      state,
-    });
+      const params = new URLSearchParams({
+        client_id: config.ssoClientId,
+        redirect_uri: `${config.appUrl}/auth/callback`,
+        response_type: "code",
+        scope: "openid email profile",
+        state,
+      });
 
-    req.session.save(() => {
-      res.redirect(`${config.ssoIssuer}/auth/oidc?${params.toString()}`);
-    });
+      req.session.save(() => {
+        res.redirect(
+          `${endpoints.authorization_endpoint}?${params.toString()}`,
+        );
+      });
+    } catch (err) {
+      console.error("[auth] Login error:", err);
+      res.status(500).send("Authentication service unavailable");
+    }
   });
 
   router.get("/callback", async (req, res) => {
     try {
+      const endpoints = await discoverOidcEndpoints(config.ssoIssuer);
       const { code, state } = req.query;
 
       if (!code || typeof code !== "string") {
@@ -54,7 +110,7 @@ export function authRouter(config: Config): Router {
         `${config.ssoClientId}:${config.ssoClientSecret}`,
       ).toString("base64");
 
-      const tokenResponse = await fetch(`${config.ssoIssuer}/auth/token`, {
+      const tokenResponse = await fetch(endpoints.token_endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -83,7 +139,7 @@ export function authRouter(config: Config): Router {
         id_token?: string;
       };
 
-      const profileResponse = await fetch(`${config.ssoIssuer}/auth/profile`, {
+      const profileResponse = await fetch(endpoints.userinfo_endpoint, {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
 

@@ -7,9 +7,3 @@ test("homepage is accessible and displays title", async ({ page }) => {
     "Compliance Scraper",
   );
 });
-
-test("homepage is accessible and displays title 2", async ({ request }) => {
-  const response = await request.get("/");
-  expect(response.ok()).toBeTruthy();
-  expect(await response.text()).toContain("Compliance Scraper");
-});
