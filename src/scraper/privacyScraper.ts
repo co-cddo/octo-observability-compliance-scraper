@@ -5,7 +5,7 @@ import type { Config } from "../config";
 import { newContext } from "./browser";
 import { findDeeperStatementLink } from "./linkFinder";
 import { detectBlock } from "./redirectDetector";
-import { extractPrivacyFromBedrock, extractMainHtml } from "./bedrock";
+import { extractPrivacyFromBedrock, extractMainText } from "./bedrock";
 import { insertPrivacyResult, getEffectiveUrl } from "../db/queries";
 import type { ServiceInfo } from "./accessibilityScraper";
 
@@ -104,8 +104,8 @@ export async function scrapePrivacy(
       });
     }
 
-    const mainHtml = await extractMainHtml(page);
-    const bedrockResult = await extractPrivacyFromBedrock(mainHtml, config);
+    const mainText = await extractMainText(page);
+    const bedrockResult = await extractPrivacyFromBedrock(mainText, config);
 
     if ("error" in bedrockResult) {
       return insertPrivacyResult(pool, {

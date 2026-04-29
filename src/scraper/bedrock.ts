@@ -70,11 +70,11 @@ function checkCredentialError(err: unknown): void {
 // --- Accessibility ---
 
 const ACCESSIBILITY_SYSTEM = `You are an expert at extracting structured compliance information from UK government accessibility statements.
-You will receive the HTML content of an accessibility statement page.
+You will receive the visible text content of an accessibility statement page.
 Extract the requested fields and respond with a single valid JSON object — no markdown, no prose, no code fences.
 If a field cannot be determined from the page, use null for strings or [] for arrays.`;
 
-const ACCESSIBILITY_USER = `Extract the following fields from this accessibility statement HTML:
+const ACCESSIBILITY_USER = `Extract the following fields from this accessibility statement text:
 
 1. wcagStandard — The WCAG version and level tested against. Use the format "WCAG X.X AA" (no "level" word), e.g. "WCAG 2.2 AA" or "WCAG 2.1 AA". Null if not stated.
 2. complianceStatus — One of exactly: "fully_compliant", "partially_compliant", "not_compliant". Null if not determinable.
@@ -99,14 +99,14 @@ HTML:
 `;
 
 export async function extractAccessibilityFromBedrock(
-  html: string,
+  text: string,
   config: Pick<Config, "bedrockModelId" | "awsRegion">,
 ): Promise<BedrockSuccess<AccessibilityBedrockExtraction> | BedrockFailure> {
   let rawResponse = "";
   try {
     const result = await callBedrock(
       ACCESSIBILITY_SYSTEM,
-      ACCESSIBILITY_USER + html.slice(0, HTML_CAP),
+      ACCESSIBILITY_USER + text.slice(0, HTML_CAP),
       config,
     );
     rawResponse = result.rawResponse;
@@ -142,11 +142,11 @@ export const extractFromBedrock = extractAccessibilityFromBedrock;
 // --- Cookies ---
 
 const COOKIE_SYSTEM = `You are an expert at analysing UK government website cookie policies and consent mechanisms.
-You will receive Set-Cookie HTTP headers and the full HTML of a cookie policy page (including any consent banners).
+You will receive Set-Cookie HTTP headers and the full visible text of a cookie policy page (including any consent banners).
 Extract the requested fields and respond with a single valid JSON object — no markdown, no prose, no code fences.
 If a field cannot be determined, use null for strings, false for booleans, [] for arrays, or {} for objects.`;
 
-const COOKIE_USER = `Analyse the following Set-Cookie headers and page HTML.
+const COOKIE_USER = `Analyse the following Set-Cookie headers and page text.
 
 Extract:
 1. consentMechanismPresent — true if the page or site has a cookie consent banner or mechanism, false otherwise.
@@ -170,7 +170,7 @@ Set-Cookie headers:
 `;
 
 export async function extractCookiesFromBedrock(
-  html: string,
+  text: string,
   setCookieHeaders: string[],
   config: Pick<Config, "bedrockModelId" | "awsRegion">,
 ): Promise<BedrockSuccess<CookieBedrockExtraction> | BedrockFailure> {
@@ -179,7 +179,7 @@ export async function extractCookiesFromBedrock(
     const headersBlock =
       setCookieHeaders.length > 0 ? setCookieHeaders.join("\n") : "(none)";
     const userContent =
-      COOKIE_USER + headersBlock + "\n\nHTML:\n" + html.slice(0, HTML_CAP);
+      COOKIE_USER + headersBlock + "\n\nPage text:\n" + text.slice(0, HTML_CAP);
 
     const result = await callBedrock(COOKIE_SYSTEM, userContent, config);
     rawResponse = result.rawResponse;
@@ -218,12 +218,12 @@ export async function extractCookiesFromBedrock(
 // --- Privacy ---
 
 const PRIVACY_SYSTEM = `You are an expert at analysing UK government privacy notices and data protection policies.
-You will receive the HTML content of a privacy notice or privacy policy page.
+You will receive the visible text content of a privacy notice or privacy policy page.
 Extract the requested fields and respond with a single valid JSON object — no markdown, no prose, no code fences.
 If a field cannot be determined, use null for strings or [] for arrays.
 Note: there may be more than one data controller — return all of them.`;
 
-const PRIVACY_USER = `Extract the following fields from this privacy notice HTML:
+const PRIVACY_USER = `Extract the following fields from this privacy notice text:
 
 1. dataControllers — Array of data controllers. Each has a "name" (string) and "contact" (string or null, e.g. email, postal address, or DPO contact). Return all controllers mentioned.
 2. legalBasis — The legal basis for data processing (e.g. "public task", "legitimate interests", "consent", "legal obligation"). Null if not stated.
@@ -244,14 +244,14 @@ HTML:
 `;
 
 export async function extractPrivacyFromBedrock(
-  html: string,
+  text: string,
   config: Pick<Config, "bedrockModelId" | "awsRegion">,
 ): Promise<BedrockSuccess<PrivacyBedrockExtraction> | BedrockFailure> {
   let rawResponse = "";
   try {
     const result = await callBedrock(
       PRIVACY_SYSTEM,
-      PRIVACY_USER + html.slice(0, HTML_CAP),
+      PRIVACY_USER + text.slice(0, HTML_CAP),
       config,
     );
     rawResponse = result.rawResponse;
@@ -291,7 +291,7 @@ export async function extractPrivacyFromBedrock(
 
 // --- Utilities ---
 
-export async function extractMainHtml(
+export async function extractMainText(
   page: import("playwright").Page,
 ): Promise<string> {
   return page.evaluate((): string => {
@@ -300,14 +300,14 @@ export async function extractMainHtml(
       document.getElementById("main-content") ??
       document.querySelector('[role="main"]') ??
       document.body;
-    return main?.innerHTML ?? "";
+    return main?.innerText ?? "";
   });
 }
 
-export async function extractFullHtml(
+export async function extractFullText(
   page: import("playwright").Page,
 ): Promise<string> {
   return page.evaluate((): string => {
-    return document.documentElement.outerHTML;
+    return document.body.innerText;
   });
 }
