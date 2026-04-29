@@ -56,7 +56,9 @@
                 <span class="govuk-header__link">{{ user.name }}</span>
               </li>
               <li class="govuk-header__navigation-item">
-                <a class="govuk-header__link" href="/auth/logout">Sign out</a>
+                <form method="post" action="/auth/logout" style="display:inline">
+                  <button type="submit" class="govuk-header__link" style="background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0;text-decoration:underline;">Sign out</button>
+                </form>
               </li>
             </ul>
           </nav>
