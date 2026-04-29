@@ -7,7 +7,7 @@ export function getPool(databaseUrl: string, nodeEnv?: string): Pool {
     const isProduction = nodeEnv === "production";
     pool = new Pool({
       connectionString: databaseUrl,
-      ...(isProduction ? { ssl: { rejectUnauthorized: false } } : {}),
+      ...(isProduction ? { ssl: { rejectUnauthorized: true } } : {}),
     });
   }
   return pool;
@@ -21,7 +21,7 @@ export function getReadOnlyPool(databaseUrl: string, nodeEnv?: string): Pool {
     readOnlyPool = new Pool({
       connectionString: databaseUrl,
       max: 3,
-      ...(isProduction ? { ssl: { rejectUnauthorized: false } } : {}),
+      ...(isProduction ? { ssl: { rejectUnauthorized: true } } : {}),
     });
     readOnlyPool.on("connect", (client) => {
       client.query(
