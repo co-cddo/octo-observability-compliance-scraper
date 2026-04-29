@@ -68,31 +68,6 @@
   .insight-bubble table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.875rem; }
   .insight-bubble th, .insight-bubble td { border: 1px solid #b1b4b6; padding: 6px 10px; text-align: left; }
   .insight-bubble th { background: #f3f2f1; font-weight: bold; }
-  .insight-sql-details {
-    margin-top: 10px;
-    font-size: 0.875rem;
-  }
-  .insight-sql-details summary {
-    cursor: pointer;
-    color: #1d70b8;
-  }
-  .insight-sql-pre {
-    background: #0b0c0c;
-    color: #ffffff;
-    padding: 12px;
-    border-radius: 4px;
-    overflow-x: auto;
-    font-family: monospace;
-    font-size: 0.8125rem;
-    white-space: pre-wrap;
-    word-break: break-all;
-    margin-top: 8px;
-  }
-  .insight-row-count {
-    font-size: 0.875rem;
-    color: #505a5f;
-    margin-top: 4px;
-  }
 </style>
 
 <script nonce="{{ cspNonce }}">
@@ -104,7 +79,7 @@
   const loading = document.getElementById('loading');
   const clearLink = document.getElementById('clear-link');
 
-  function appendMessage(role, content, sql, rowCount) {
+  function appendMessage(role, content) {
     const wrapper = document.createElement('div');
     wrapper.className = 'insight-message insight-message--' + role;
 
@@ -115,26 +90,6 @@
       bubble.textContent = content;
     } else {
       bubble.innerHTML = content;
-
-      if (sql) {
-        const details = document.createElement('details');
-        details.className = 'insight-sql-details';
-        const summary = document.createElement('summary');
-        summary.textContent = 'View SQL query';
-        const pre = document.createElement('pre');
-        pre.className = 'insight-sql-pre';
-        pre.textContent = sql;
-        details.appendChild(summary);
-        details.appendChild(pre);
-        bubble.appendChild(details);
-      }
-
-      if (typeof rowCount === 'number') {
-        const rc = document.createElement('p');
-        rc.className = 'insight-row-count';
-        rc.textContent = rowCount + ' row' + (rowCount !== 1 ? 's' : '') + ' returned';
-        bubble.appendChild(rc);
-      }
     }
 
     wrapper.appendChild(bubble);
@@ -147,7 +102,7 @@
     const question = textarea.value.trim();
     if (!question) return;
 
-    appendMessage('user', question, null, null);
+    appendMessage('user', question);
     textarea.value = '';
     button.disabled = true;
     loading.style.display = 'block';
@@ -162,12 +117,12 @@
       const data = await resp.json();
 
       if (data.error) {
-        appendMessage('assistant', 'Sorry, something went wrong: ' + data.error, null, null);
+        appendMessage('assistant', 'Sorry, something went wrong: ' + data.error);
       } else {
-        appendMessage('assistant', data.answer, data.sql, data.rowCount);
+        appendMessage('assistant', data.answer);
       }
     } catch (err) {
-      appendMessage('assistant', 'Sorry, a network error occurred.', null, null);
+      appendMessage('assistant', 'Sorry, a network error occurred.');
     } finally {
       button.disabled = false;
       loading.style.display = 'none';

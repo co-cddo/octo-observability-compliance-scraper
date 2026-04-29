@@ -43,8 +43,6 @@ export function insightsRouter(
         console.log("[insights] Validation failed:", validation.reason);
         res.json({
           answer: `I couldn't generate a valid query for that question. ${validation.reason}.`,
-          sql,
-          rowCount: 0,
           rows: [],
         });
         return;
@@ -69,8 +67,6 @@ export function insightsRouter(
         if (!validation.valid) {
           res.json({
             answer: `I tried to fix the query but couldn't generate a valid one. ${validation.reason}.`,
-            sql: null,
-            rowCount: 0,
             rows: [],
           });
           return;
@@ -86,8 +82,6 @@ export function insightsRouter(
           res.json({
             answer:
               "I wasn't able to query the database for that. Please try rephrasing your question.",
-            sql: null,
-            rowCount: 0,
             rows: [],
           });
           return;
@@ -113,8 +107,6 @@ export function insightsRouter(
 
       res.json({
         answer,
-        sql: validation.sql,
-        rowCount: rows.length,
         rows: rows.slice(0, 20),
       });
     } catch (err) {

@@ -42,7 +42,11 @@ export function createApp(
             (_req, res) =>
               `'nonce-${(res as express.Response).locals.cspNonce}'`,
           ],
-          styleSrc: ["'self'"],
+          styleSrc: [
+            "'self'",
+            (_req, res) =>
+              `'nonce-${(res as express.Response).locals.cspNonce}'`,
+          ],
           imgSrc: ["'self'", "data:"],
           fontSrc: ["'self'"],
           connectSrc: ["'self'"],
