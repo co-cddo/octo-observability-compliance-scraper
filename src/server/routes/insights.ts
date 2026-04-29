@@ -7,6 +7,7 @@ import {
   retrySqlWithError,
   summariseResults,
 } from "../../insights/insightsBedrock";
+import { sanitiseInsightsHtml } from "../../insights/sanitiseHtml";
 
 const MAX_HISTORY = 20;
 
@@ -91,12 +92,14 @@ export function insightsRouter(
         }
       }
 
-      const answer = await summariseResults(
-        question,
-        validation.sql,
-        rows,
-        rows.length,
-        config,
+      const answer = sanitiseInsightsHtml(
+        await summariseResults(
+          question,
+          validation.sql,
+          rows,
+          rows.length,
+          config,
+        ),
       );
 
       history.push({ role: "user", content: question });
