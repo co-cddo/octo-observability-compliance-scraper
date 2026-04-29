@@ -96,6 +96,7 @@
 </style>
 
 <script>
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
   const form = document.getElementById('ask-form');
   const textarea = document.getElementById('question');
   const button = document.getElementById('ask-button');
@@ -154,7 +155,7 @@
     try {
       const resp = await fetch('/insights/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken },
         body: JSON.stringify({ question }),
       });
 
@@ -183,7 +184,7 @@
 
   clearLink.addEventListener('click', async function(e) {
     e.preventDefault();
-    await fetch('/insights/clear', { method: 'POST' });
+    await fetch('/insights/clear', { method: 'POST', headers: { 'x-csrf-token': csrfToken } });
     chatArea.innerHTML = '';
   });
 </script>

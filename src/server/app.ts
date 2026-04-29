@@ -2,6 +2,7 @@ import express, { Express } from "express";
 import helmet from "helmet";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import { csrfSync } from "csrf-sync";
 import nunjucks from "nunjucks";
 import * as path from "path";
 import { Pool } from "pg";
@@ -92,8 +93,19 @@ export function createApp(
     }),
   );
 
+  const { csrfSynchronisedProtection, generateToken } = csrfSync({
+    getTokenFromRequest: (req) => {
+      const body = req.body as Record<string, unknown> | undefined;
+      if (body?._csrf) return body._csrf as string;
+      return req.headers["x-csrf-token"] as string | undefined;
+    },
+  });
+
+  app.use(csrfSynchronisedProtection);
+
   app.use((req, _res, next) => {
     njkEnv.addGlobal("user", req.session.user ?? null);
+    njkEnv.addGlobal("csrfToken", generateToken(req));
     next();
   });
 

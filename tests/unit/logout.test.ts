@@ -26,12 +26,9 @@ const config = {
 };
 
 describe("logout endpoint", () => {
-  it("POST /auth/logout destroys session and redirects to /", async () => {
+  it("POST /auth/logout requires CSRF token", async () => {
     const app = createApp(mockPool, mockPool, config);
-    const agent = request.agent(app);
-
-    const res = await agent.post("/auth/logout");
-    assert.equal(res.status, 302);
-    assert.equal(res.headers["location"], "/");
+    const res = await request(app).post("/auth/logout");
+    assert.equal(res.status, 403);
   });
 });
