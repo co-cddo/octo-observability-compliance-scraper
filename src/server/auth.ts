@@ -3,6 +3,18 @@ import * as crypto from "crypto";
 import type { Config } from "../config";
 import "./sessionTypes";
 
+export function sanitiseReturnTo(value: string | undefined): string {
+  if (
+    typeof value === "string" &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.startsWith("/\\")
+  ) {
+    return value;
+  }
+  return "/accessibility";
+}
+
 type OidcEndpoints = {
   authorization_endpoint: string;
   token_endpoint: string;
@@ -161,7 +173,7 @@ export function authRouter(config: Config): Router {
           profile.display_name ?? profile.name ?? profile.email ?? "Unknown",
       };
 
-      const returnTo = req.session.returnTo ?? "/accessibility";
+      const returnTo = sanitiseReturnTo(req.session.returnTo);
       delete req.session.returnTo;
       res.redirect(returnTo);
     } catch (err) {
