@@ -1,4 +1,5 @@
 import express, { Express } from "express";
+import helmet from "helmet";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import nunjucks from "nunjucks";
@@ -22,6 +23,22 @@ export function createApp(
 ): Express {
   const app = express();
   app.set("trust proxy", 1);
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'"],
+          imgSrc: ["'self'", "data:"],
+          fontSrc: ["'self'"],
+          connectSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+    }),
+  );
 
   const viewsDir = path.join(__dirname, "views");
   const govukMacrosDir = path.join(
@@ -126,12 +143,10 @@ export function createApp(
         return;
       }
       await boss.send(SCHEDULE_CRON_NAME, {});
-      res
-        .status(200)
-        .json({
-          status: "triggered",
-          message: "Enqueued discovery for all services",
-        });
+      res.status(200).json({
+        status: "triggered",
+        message: "Enqueued discovery for all services",
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       res.status(500).json({ status: "error", message });
