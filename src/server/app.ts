@@ -1,4 +1,5 @@
 import express, { Express } from "express";
+import * as crypto from "crypto";
 import helmet from "helmet";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -26,12 +27,21 @@ export function createApp(
   const app = express();
   app.set("trust proxy", 1);
 
+  app.use((_req, res, next) => {
+    res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+    next();
+  });
+
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            (_req, res) =>
+              `'nonce-${(res as express.Response).locals.cspNonce}'`,
+          ],
           styleSrc: ["'self'"],
           imgSrc: ["'self'", "data:"],
           fontSrc: ["'self'"],
@@ -103,9 +113,10 @@ export function createApp(
 
   app.use(csrfSynchronisedProtection);
 
-  app.use((req, _res, next) => {
+  app.use((req, res, next) => {
     njkEnv.addGlobal("user", req.session.user ?? null);
     njkEnv.addGlobal("csrfToken", generateToken(req));
+    njkEnv.addGlobal("cspNonce", res.locals.cspNonce);
     next();
   });
 

@@ -95,7 +95,7 @@
   }
 </style>
 
-<script>
+<script nonce="{{ cspNonce }}">
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
   const form = document.getElementById('ask-form');
   const textarea = document.getElementById('question');

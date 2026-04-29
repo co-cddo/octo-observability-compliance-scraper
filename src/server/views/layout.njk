@@ -36,7 +36,7 @@
   </style>
 </head>
 <body class="govuk-template__body">
-  <script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
+  <script nonce="{{ cspNonce }}">document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
 
   <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
 
@@ -149,8 +149,8 @@
     </div>
   </footer>
 
-  <script type="module" src="/public/govuk-frontend.min.js"></script>
-  <script>
+  <script nonce="{{ cspNonce }}" type="module" src="/public/govuk-frontend.min.js"></script>
+  <script nonce="{{ cspNonce }}">
     document.querySelectorAll('[data-trigger-url]').forEach(function (btn) {
       btn.addEventListener('click', async function () {
         var url = btn.dataset.triggerUrl;
