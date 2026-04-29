@@ -82,9 +82,11 @@ export function insightsRouter(
         } catch (retryErr) {
           const retryMessage =
             retryErr instanceof Error ? retryErr.message : String(retryErr);
+          console.error("[insights] Retry query failed:", retryMessage);
           res.json({
-            answer: `I wasn't able to query the database for that. Error: ${retryMessage}`,
-            sql: validation.sql,
+            answer:
+              "I wasn't able to query the database for that. Please try rephrasing your question.",
+            sql: null,
             rowCount: 0,
             rows: [],
           });
@@ -118,7 +120,9 @@ export function insightsRouter(
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("[insights] Error:", message);
-      res.status(500).json({ error: message });
+      res
+        .status(500)
+        .json({ error: "An internal error occurred. Please try again later." });
     }
   });
 
