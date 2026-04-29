@@ -13,6 +13,7 @@ import { insightsRouter } from "./routes/insights";
 import { workersRouter } from "./routes/workers";
 import { serviceRouter } from "./routes/service";
 import { authRouter, requireAuth } from "./auth";
+import { bedrockRateLimiter } from "./rateLimit";
 import { getBoss, SCHEDULE_CRON_NAME } from "../worker";
 import "./sessionTypes";
 
@@ -133,7 +134,7 @@ export function createApp(
   // Protected routes
   app.use(requireAuth());
 
-  app.post("/trigger", async (_req, res) => {
+  app.post("/trigger", bedrockRateLimiter, async (_req, res) => {
     try {
       const boss = getBoss();
       if (!boss) {
@@ -156,9 +157,12 @@ export function createApp(
   app.use("/accessibility", accessibilityRouter(pool));
   app.use("/cookies", cookiesRouter(pool));
   app.use("/privacy", privacyRouter(pool));
-  app.use("/insights", insightsRouter(readOnlyPool, config));
+  app.use(
+    "/insights",
+    insightsRouter(readOnlyPool, config, bedrockRateLimiter),
+  );
   app.use("/workers", workersRouter(pool));
-  app.use("/services", serviceRouter(pool));
+  app.use("/services", serviceRouter(pool, bedrockRateLimiter));
 
   return app;
 }

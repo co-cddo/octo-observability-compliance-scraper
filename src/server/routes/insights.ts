@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import { Pool } from "pg";
 import type { Config } from "../../config";
 import { validateSql } from "../../insights/sqlValidator";
@@ -12,14 +12,18 @@ const MAX_HISTORY = 20;
 
 type ConversationMessage = { role: "user" | "assistant"; content: string };
 
-export function insightsRouter(readOnlyPool: Pool, config: Config): Router {
+export function insightsRouter(
+  readOnlyPool: Pool,
+  config: Config,
+  rateLimiter: RequestHandler,
+): Router {
   const router = Router();
 
   router.get("/", (_req, res) => {
     res.render("insights.njk", { title: "Insights" });
   });
 
-  router.post("/ask", async (req, res) => {
+  router.post("/ask", rateLimiter, async (req, res) => {
     const question =
       typeof req.body?.question === "string" ? req.body.question.trim() : "";
     if (!question) {
