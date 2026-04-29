@@ -162,6 +162,7 @@ export function authRouter(config: Config): Router {
       }
 
       const profile = (await profileResponse.json()) as {
+        sub?: string;
         email?: string;
         name?: string;
         display_name?: string;
@@ -169,6 +170,7 @@ export function authRouter(config: Config): Router {
 
       const returnTo = sanitiseReturnTo(req.session.returnTo);
       const user = {
+        sub: profile.sub ?? profile.email ?? "unknown",
         email: profile.email ?? "unknown",
         name:
           profile.display_name ?? profile.name ?? profile.email ?? "Unknown",
