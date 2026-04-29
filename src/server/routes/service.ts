@@ -1,5 +1,6 @@
 import { Router, RequestHandler } from "express";
 import { Pool } from "pg";
+import { validatePublicUrl } from "../validateUrl";
 import {
   getAccessibilityResultsBySlug,
   getCookieResultsBySlug,
@@ -92,6 +93,12 @@ export function serviceRouter(pool: Pool, rateLimiter: RequestHandler): Router {
       const url = typeof req.body.url === "string" ? req.body.url.trim() : "";
       if (!url) {
         res.status(400).json({ status: "error", message: "URL is required" });
+        return;
+      }
+
+      const urlCheck = validatePublicUrl(url);
+      if (!urlCheck.valid) {
+        res.status(400).json({ status: "error", message: urlCheck.reason });
         return;
       }
 
