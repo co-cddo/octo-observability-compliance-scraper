@@ -4,10 +4,10 @@ const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 export async function launchBrowser(): Promise<Browser> {
-  const args =
-    process.env["NODE_ENV"] !== "production"
-      ? ["--ignore-certificate-errors"]
-      : [];
+  const args = ["--no-sandbox", "--disable-setuid-sandbox"];
+  if (process.env["NODE_ENV"] !== "production") {
+    args.push("--ignore-certificate-errors");
+  }
   return chromium.launch({ headless: true, args });
 }
 
