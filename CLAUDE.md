@@ -77,7 +77,6 @@ Protected routes: `/accessibility`, `/cookies`, `/privacy`, `/insights`, `/servi
 - **Append-only results tables** — `accessibility_results`, `cookie_results`, `privacy_results` — never UPDATE. UI uses `DISTINCT ON (service_slug)` for latest per service, with pagination (25 per page)
 - **`services` table** — seeded from `services.json`, used by pg-boss worker to look up service data at job processing time
 - **`compliance_urls` table** — tracks discovered and manually overridden URLs for accessibility statements, cookie policies, and privacy notices
-- **`audit_events` table** — logs security-relevant actions (URL overrides) with user, action, JSONB detail, and timestamp
 - **Migrations** in `src/db/migrations/` — numbered SQL files, applied by `src/db/migrate.ts`
 - **Sessions** — `session` table auto-created by `connect-pg-simple`
 

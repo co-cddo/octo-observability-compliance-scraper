@@ -199,7 +199,7 @@ export function authRouter(config: Config): Router {
     }
   });
 
-  router.post("/logout", (req, res) => {
+  router.get("/logout", (req, res) => {
     req.session.destroy(() => {
       res.redirect("/");
     });
