@@ -5,7 +5,7 @@ import type { Config } from "../config";
 import { newContext } from "./browser";
 import { findDeeperStatementLink } from "./linkFinder";
 import { detectBlock } from "./redirectDetector";
-import { extractAccessibilityFromBedrock, extractMainHtml } from "./bedrock";
+import { extractAccessibilityFromBedrock, extractMainText } from "./bedrock";
 import { insertAccessibilityResult, getEffectiveUrl } from "../db/queries";
 
 export function toSlug(name: string): string {
@@ -130,9 +130,9 @@ export async function scrapeAccessibility(
       });
     }
 
-    const mainHtml = await extractMainHtml(page);
+    const mainText = await extractMainText(page);
     const bedrockResult = await extractAccessibilityFromBedrock(
-      mainHtml,
+      mainText,
       config,
     );
 

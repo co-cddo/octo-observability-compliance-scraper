@@ -5,7 +5,7 @@ import type { Config } from "../config";
 import { newContext } from "./browser";
 import { findDeeperStatementLink } from "./linkFinder";
 import { detectBlock } from "./redirectDetector";
-import { extractCookiesFromBedrock, extractFullHtml } from "./bedrock";
+import { extractCookiesFromBedrock, extractFullText } from "./bedrock";
 import { insertCookieResult, getEffectiveUrl } from "../db/queries";
 import type { ServiceInfo } from "./accessibilityScraper";
 
@@ -115,9 +115,9 @@ export async function scrapeCookies(
       });
     }
 
-    const fullHtml = await extractFullHtml(page);
+    const fullText = await extractFullText(page);
     const bedrockResult = await extractCookiesFromBedrock(
-      fullHtml,
+      fullText,
       setCookieHeaders,
       config,
     );

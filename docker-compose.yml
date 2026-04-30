@@ -40,13 +40,25 @@ services:
           }]
         }
 
+  oidc-mock-ready:
+    image: curlimages/curl:latest
+    depends_on:
+      oidc-mock:
+        condition: service_started
+    entrypoint: ["sleep", "infinity"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://oidc-mock:8090/isalive"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
   compliance-scraper:
     build: .
     depends_on:
       postgres:
         condition: service_healthy
-      oidc-mock:
-        condition: service_started
+      oidc-mock-ready:
+        condition: service_healthy
     env_file:
       - path: .env
         required: false
@@ -93,6 +105,7 @@ services:
       - .:/app
       - e2e-node-modules:/app/node_modules
       - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results
     command: >
       bash -c "npm install -g $$(npm pkg get packageManager | tr -d '\"')
       && pnpm install --frozen-lockfile

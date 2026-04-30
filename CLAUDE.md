@@ -30,6 +30,9 @@ The daily cron (2 AM London) enqueues one job per service. Jobs are processed se
 - `src/db/migrate.ts` — lightweight migration runner using `schema_migrations` table
 - `src/db/seed.ts` — upserts services from `services.json` into the `services` table
 - `src/db/queries.ts` — all SQL queries (parameterised, no string interpolation)
+- `src/insights/sqlValidator.ts` — AST-based SQL validation (allowlist functions, cap LIMIT, reject non-SELECT)
+- `src/server/validateUrl.ts` — HTTPS + gov.uk domain validation for URL overrides
+- `src/insights/sanitiseHtml.ts` — sanitise-html wrapper for LLM output
 
 ## Running locally
 
@@ -62,6 +65,8 @@ APP_URL=http://localhost:3000
 
 OAuth2 authorization code flow via Internal Access (`sso.service.security.gov.uk`). Sessions stored in Postgres via `connect-pg-simple` (auto-creates `session` table). 2-hour session expiry matching token lifetime. No refresh tokens.
 
+Session is regenerated on login (`session.regenerate()`) to prevent session fixation. The OIDC `sub` claim is stored as the stable user identifier (email may change).
+
 Public routes: `/`, `/health`, `/auth/*`, `/public/*`, `/assets/*`
 Protected routes: `/accessibility`, `/cookies`, `/privacy`, `/insights`, `/services/*`
 
@@ -74,6 +79,18 @@ Protected routes: `/accessibility`, `/cookies`, `/privacy`, `/insights`, `/servi
 - **`compliance_urls` table** — tracks discovered and manually overridden URLs for accessibility statements, cookie policies, and privacy notices
 - **Migrations** in `src/db/migrations/` — numbered SQL files, applied by `src/db/migrate.ts`
 - **Sessions** — `session` table auto-created by `connect-pg-simple`
+
+## Security
+
+- **CSRF** — synchroniser token pattern via `csrf-sync`. Tokens delivered in a `<meta>` tag and submitted as `_csrf` body field or `x-csrf-token` header. All POST endpoints are protected.
+- **SQL validation** — LLM-generated SQL is parsed with `pgsql-ast-parser` (AST-based). Only single SELECT/WITH statements allowed; function calls checked against an allowlist; LIMIT capped at 100. The read-only pool also enforces `default_transaction_read_only` and `statement_timeout` at DB level.
+- **URL validation** — manual URL overrides restricted to HTTPS + `*.gov.uk` domains (`src/server/validateUrl.ts`).
+- **Prompt injection** — scraper extracts `innerText` (not `innerHTML`) before sending to Bedrock, so hidden elements, scripts, and HTML comments never reach the LLM.
+- **HTML sanitisation** — LLM prose responses are sanitised server-side with `sanitize-html` (strict tag allowlist) before rendering.
+- **TLS** — database connections use `ssl: { rejectUnauthorized: true }` in production.
+- **Headers** — `helmet` adds security headers (CSP, HSTS, X-Frame-Options, etc.).
+- **Rate limiting** — Bedrock-spending endpoints are rate-limited per session.
+- **Session** — `SESSION_SECRET` must be ≥32 chars in production; `httpOnly`, `sameSite: lax`, `secure` (in prod) cookies.
 
 ## Package manager
 

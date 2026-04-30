@@ -55,23 +55,13 @@ npm run db:seed
 
 ## Running locally
 
-### UI only (no worker)
-
 ```bash
 npm run dev
-```
-
-Opens at [http://localhost:3000](http://localhost:3000). This starts only the Express server — no scraping will happen.
-
-### Full app (server + worker)
-
-```bash
+npm run dev:watch
 npm run build && npm start
 ```
 
-Starts the Express server and the pg-boss job worker in the same process. The worker runs 3 concurrent scrape loops and a daily cron at 2am London time.
-
-Trigger checks from the Workers page (all services) or from individual service pages (single service).
+Opens at [http://localhost:3000](http://localhost:3000)
 
 ### Docker Compose
 

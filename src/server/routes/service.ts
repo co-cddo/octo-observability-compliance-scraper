@@ -1,5 +1,6 @@
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import { Pool } from "pg";
+import { validatePublicUrl } from "../validateUrl";
 import {
   getAccessibilityResultsBySlug,
   getCookieResultsBySlug,
@@ -19,10 +20,10 @@ const VALID_TYPES = new Set<ComplianceLinkType>([
   "privacy",
 ]);
 
-export function serviceRouter(pool: Pool): Router {
+export function serviceRouter(pool: Pool, rateLimiter: RequestHandler): Router {
   const router = Router();
 
-  router.post("/:slug/trigger", async (req, res, next) => {
+  router.post("/:slug/trigger", rateLimiter, async (req, res, next) => {
     try {
       const { slug } = req.params;
       const service = await getServiceBySlug(pool, slug);
@@ -45,7 +46,7 @@ export function serviceRouter(pool: Pool): Router {
     }
   });
 
-  router.post("/:slug/trigger/:type", async (req, res, next) => {
+  router.post("/:slug/trigger/:type", rateLimiter, async (req, res, next) => {
     try {
       const { slug, type } = req.params;
       if (!VALID_TYPES.has(type as ComplianceLinkType)) {
@@ -92,6 +93,12 @@ export function serviceRouter(pool: Pool): Router {
       const url = typeof req.body.url === "string" ? req.body.url.trim() : "";
       if (!url) {
         res.status(400).json({ status: "error", message: "URL is required" });
+        return;
+      }
+
+      const urlCheck = validatePublicUrl(url);
+      if (!urlCheck.valid) {
+        res.status(400).json({ status: "error", message: urlCheck.reason });
         return;
       }
 

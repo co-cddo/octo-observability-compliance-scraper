@@ -69,6 +69,25 @@ describe("loadConfig", () => {
     assert.equal(config.port, 8080);
   });
 
+  it("throws when SESSION_SECRET is missing in production", async () => {
+    process.env["NODE_ENV"] = "production";
+    delete process.env["SESSION_SECRET"];
+    await assert.rejects(loadConfig, /SESSION_SECRET/);
+  });
+
+  it("throws when SESSION_SECRET is too short in production", async () => {
+    process.env["NODE_ENV"] = "production";
+    process.env["SESSION_SECRET"] = "short";
+    await assert.rejects(loadConfig, /SESSION_SECRET/);
+  });
+
+  it("allows default SESSION_SECRET in development", async () => {
+    process.env["NODE_ENV"] = "development";
+    delete process.env["SESSION_SECRET"];
+    const config = await loadConfig();
+    assert.equal(config.sessionSecret, "dev-secret-change-me");
+  });
+
   it("URL-encodes special characters in database credentials", async () => {
     delete process.env["DATABASE_URL"];
     process.env["DATABASE_HOST"] = "localhost";

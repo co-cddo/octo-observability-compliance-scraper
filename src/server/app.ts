@@ -1,6 +1,9 @@
 import express, { Express } from "express";
+import * as crypto from "crypto";
+import helmet from "helmet";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import { csrfSync } from "csrf-sync";
 import nunjucks from "nunjucks";
 import * as path from "path";
 import { Pool } from "pg";
@@ -12,6 +15,7 @@ import { insightsRouter } from "./routes/insights";
 import { workersRouter } from "./routes/workers";
 import { serviceRouter } from "./routes/service";
 import { authRouter, requireAuth } from "./auth";
+import { bedrockRateLimiter } from "./rateLimit";
 import { getBoss, SCHEDULE_CRON_NAME } from "../worker";
 import "./sessionTypes";
 
@@ -22,6 +26,36 @@ export function createApp(
 ): Express {
   const app = express();
   app.set("trust proxy", 1);
+
+  app.use((_req, res, next) => {
+    res.locals.cspNonce = crypto.randomBytes(16).toString("base64");
+    next();
+  });
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            (_req, res) =>
+              `'nonce-${(res as express.Response).locals.cspNonce}'`,
+          ],
+          styleSrc: [
+            "'self'",
+            (_req, res) =>
+              `'nonce-${(res as express.Response).locals.cspNonce}'`,
+          ],
+          imgSrc: ["'self'", "data:"],
+          fontSrc: ["'self'"],
+          connectSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+          upgradeInsecureRequests: config.nodeEnv === "production" ? [] : null,
+        },
+      },
+    }),
+  );
 
   const viewsDir = path.join(__dirname, "views");
   const govukMacrosDir = path.join(
@@ -74,8 +108,20 @@ export function createApp(
     }),
   );
 
-  app.use((req, _res, next) => {
+  const { csrfSynchronisedProtection, generateToken } = csrfSync({
+    getTokenFromRequest: (req) => {
+      const body = req.body as Record<string, unknown> | undefined;
+      if (body?._csrf) return body._csrf as string;
+      return req.headers["x-csrf-token"] as string | undefined;
+    },
+  });
+
+  app.use(csrfSynchronisedProtection);
+
+  app.use((req, res, next) => {
     njkEnv.addGlobal("user", req.session.user ?? null);
+    njkEnv.addGlobal("csrfToken", generateToken(req));
+    njkEnv.addGlobal("cspNonce", res.locals.cspNonce);
     next();
   });
 
@@ -116,7 +162,7 @@ export function createApp(
   // Protected routes
   app.use(requireAuth());
 
-  app.post("/trigger", async (_req, res) => {
+  app.post("/trigger", bedrockRateLimiter, async (_req, res) => {
     try {
       const boss = getBoss();
       if (!boss) {
@@ -126,12 +172,10 @@ export function createApp(
         return;
       }
       await boss.send(SCHEDULE_CRON_NAME, {});
-      res
-        .status(200)
-        .json({
-          status: "triggered",
-          message: "Enqueued discovery for all services",
-        });
+      res.status(200).json({
+        status: "triggered",
+        message: "Enqueued discovery for all services",
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       res.status(500).json({ status: "error", message });
@@ -141,9 +185,12 @@ export function createApp(
   app.use("/accessibility", accessibilityRouter(pool));
   app.use("/cookies", cookiesRouter(pool));
   app.use("/privacy", privacyRouter(pool));
-  app.use("/insights", insightsRouter(readOnlyPool, config));
+  app.use(
+    "/insights",
+    insightsRouter(readOnlyPool, config, bedrockRateLimiter),
+  );
   app.use("/workers", workersRouter(pool));
-  app.use("/services", serviceRouter(pool));
+  app.use("/services", serviceRouter(pool, bedrockRateLimiter));
 
   return app;
 }

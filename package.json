@@ -25,14 +25,19 @@
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1037.0",
     "connect-pg-simple": "^10.0.0",
+    "csrf-sync": "4.2.1",
     "dotenv": "^17.4.2",
     "express": "^4.22.1",
+    "express-rate-limit": "8.4.1",
     "express-session": "^1.19.0",
     "govuk-frontend": "^5.14.0",
+    "helmet": "8.1.0",
     "nunjucks": "^3.2.4",
     "pg": "^8.20.0",
     "pg-boss": "^10.4.2",
-    "playwright": "^1.59.1"
+    "pgsql-ast-parser": "12.0.2",
+    "playwright": "^1.59.1",
+    "sanitize-html": "2.17.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -43,11 +48,14 @@
     "@types/node": "^20.19.39",
     "@types/nunjucks": "^3.2.6",
     "@types/pg": "^8.20.0",
+    "@types/sanitize-html": "2.16.1",
+    "@types/supertest": "7.2.0",
     "eslint": "^10.2.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
+    "supertest": "7.2.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.0"

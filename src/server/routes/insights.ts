@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import { Pool } from "pg";
 import type { Config } from "../../config";
 import { validateSql } from "../../insights/sqlValidator";
@@ -7,19 +7,24 @@ import {
   retrySqlWithError,
   summariseResults,
 } from "../../insights/insightsBedrock";
+import { sanitiseInsightsHtml } from "../../insights/sanitiseHtml";
 
 const MAX_HISTORY = 20;
 
 type ConversationMessage = { role: "user" | "assistant"; content: string };
 
-export function insightsRouter(readOnlyPool: Pool, config: Config): Router {
+export function insightsRouter(
+  readOnlyPool: Pool,
+  config: Config,
+  rateLimiter: RequestHandler,
+): Router {
   const router = Router();
 
   router.get("/", (_req, res) => {
     res.render("insights.njk", { title: "Insights" });
   });
 
-  router.post("/ask", async (req, res) => {
+  router.post("/ask", rateLimiter, async (req, res) => {
     const question =
       typeof req.body?.question === "string" ? req.body.question.trim() : "";
     if (!question) {
@@ -38,8 +43,6 @@ export function insightsRouter(readOnlyPool: Pool, config: Config): Router {
         console.log("[insights] Validation failed:", validation.reason);
         res.json({
           answer: `I couldn't generate a valid query for that question. ${validation.reason}.`,
-          sql,
-          rowCount: 0,
           rows: [],
         });
         return;
@@ -64,8 +67,6 @@ export function insightsRouter(readOnlyPool: Pool, config: Config): Router {
         if (!validation.valid) {
           res.json({
             answer: `I tried to fix the query but couldn't generate a valid one. ${validation.reason}.`,
-            sql: null,
-            rowCount: 0,
             rows: [],
           });
           return;
@@ -77,22 +78,24 @@ export function insightsRouter(readOnlyPool: Pool, config: Config): Router {
         } catch (retryErr) {
           const retryMessage =
             retryErr instanceof Error ? retryErr.message : String(retryErr);
+          console.error("[insights] Retry query failed:", retryMessage);
           res.json({
-            answer: `I wasn't able to query the database for that. Error: ${retryMessage}`,
-            sql: validation.sql,
-            rowCount: 0,
+            answer:
+              "I wasn't able to query the database for that. Please try rephrasing your question.",
             rows: [],
           });
           return;
         }
       }
 
-      const answer = await summariseResults(
-        question,
-        validation.sql,
-        rows,
-        rows.length,
-        config,
+      const answer = sanitiseInsightsHtml(
+        await summariseResults(
+          question,
+          validation.sql,
+          rows,
+          rows.length,
+          config,
+        ),
       );
 
       history.push({ role: "user", content: question });
@@ -104,14 +107,14 @@ export function insightsRouter(readOnlyPool: Pool, config: Config): Router {
 
       res.json({
         answer,
-        sql: validation.sql,
-        rowCount: rows.length,
         rows: rows.slice(0, 20),
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("[insights] Error:", message);
-      res.status(500).json({ error: message });
+      res
+        .status(500)
+        .json({ error: "An internal error occurred. Please try again later." });
     }
   });
 

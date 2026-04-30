@@ -67,6 +67,7 @@
       </summary>
       <div class="govuk-details__text">
         <form method="post" action="/services/{{ service.slug }}/urls/{{ type }}" class="govuk-!-margin-bottom-3">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
           <div class="govuk-form-group">
             <label class="govuk-label" for="url-{{ type }}">Override URL</label>
             <input class="govuk-input govuk-input--width-30" id="url-{{ type }}" name="url" type="url"

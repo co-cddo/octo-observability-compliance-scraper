@@ -3,6 +3,18 @@ import * as crypto from "crypto";
 import type { Config } from "../config";
 import "./sessionTypes";
 
+export function sanitiseReturnTo(value: string | undefined): string {
+  if (
+    typeof value === "string" &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.startsWith("/\\")
+  ) {
+    return value;
+  }
+  return "/accessibility";
+}
+
 type OidcEndpoints = {
   authorization_endpoint: string;
   token_endpoint: string;
@@ -75,6 +87,7 @@ export function authRouter(config: Config): Router {
         client_id: config.ssoClientId,
         redirect_uri: `${config.appUrl}/auth/callback`,
         response_type: "code",
+        response_mode: "query",
         scope: "openid email profile",
         state,
       });
@@ -150,20 +163,36 @@ export function authRouter(config: Config): Router {
       }
 
       const profile = (await profileResponse.json()) as {
+        sub?: string;
         email?: string;
         name?: string;
         display_name?: string;
       };
 
-      req.session.user = {
+      const returnTo = sanitiseReturnTo(req.session.returnTo);
+      const user = {
+        sub: profile.sub ?? profile.email ?? "unknown",
         email: profile.email ?? "unknown",
         name:
           profile.display_name ?? profile.name ?? profile.email ?? "Unknown",
       };
 
-      const returnTo = req.session.returnTo ?? "/accessibility";
-      delete req.session.returnTo;
-      res.redirect(returnTo);
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("[auth] Session regenerate failed:", err);
+          res.status(500).send("Authentication error");
+          return;
+        }
+        req.session.user = user;
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[auth] Session save failed:", saveErr);
+            res.status(500).send("Authentication error");
+            return;
+          }
+          res.redirect(returnTo);
+        });
+      });
     } catch (err) {
       console.error("[auth] Callback error:", err);
       res.status(500).send("Authentication error");

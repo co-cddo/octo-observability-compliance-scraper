@@ -17,6 +17,21 @@ export type Config = {
   appUrl: string;
 };
 
+function validateSessionSecret(
+  value: string | undefined,
+  nodeEnv: string,
+): string {
+  if (nodeEnv === "production") {
+    if (!value || value.length < 32) {
+      throw new Error(
+        "SESSION_SECRET must be set to a 32+ character random string in production",
+      );
+    }
+    return value;
+  }
+  return value ?? "dev-secret-change-me";
+}
+
 function buildDatabaseUrl(): string {
   if (process.env["DATABASE_URL"]) {
     return process.env["DATABASE_URL"];
@@ -55,7 +70,10 @@ export function loadConfig(): Config {
     servicesJsonPath: process.env["SERVICES_JSON_PATH"] ?? "./services.json",
     port: parseInt(process.env["PORT"] ?? "3000", 10),
     nodeEnv: process.env["NODE_ENV"] ?? "development",
-    sessionSecret: process.env["SESSION_SECRET"] ?? "dev-secret-change-me",
+    sessionSecret: validateSessionSecret(
+      process.env["SESSION_SECRET"],
+      process.env["NODE_ENV"] ?? "development",
+    ),
     ssoClientId: process.env["SSO_CLIENT_ID"] ?? "",
     ssoClientSecret: process.env["SSO_CLIENT_SECRET"] ?? "",
     ssoIssuer:
