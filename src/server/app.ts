@@ -51,6 +51,7 @@ export function createApp(
           fontSrc: ["'self'"],
           connectSrc: ["'self'"],
           frameAncestors: ["'none'"],
+          upgradeInsecureRequests: config.nodeEnv === "production" ? [] : null,
         },
       },
     }),

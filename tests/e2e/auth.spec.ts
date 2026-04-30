@@ -9,7 +9,7 @@ test.describe("authentication flow", () => {
 
     await page.waitForURL("**/accessibility");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign out" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   });
 
   test("unauthenticated user is redirected to homepage", async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe("authentication flow", () => {
       .click();
     await page.waitForURL("**/accessibility");
 
-    await page.getByRole("link", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/$/);
 
     await page.goto("/accessibility");

@@ -87,6 +87,7 @@ export function authRouter(config: Config): Router {
         client_id: config.ssoClientId,
         redirect_uri: `${config.appUrl}/auth/callback`,
         response_type: "code",
+        response_mode: "query",
         scope: "openid email profile",
         state,
       });
