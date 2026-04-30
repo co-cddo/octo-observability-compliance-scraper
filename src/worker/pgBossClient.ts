@@ -8,7 +8,7 @@ export function createBoss(config: Config): PgBoss {
     archiveCompletedAfterSeconds: 86400,
     monitorStateIntervalSeconds: 30,
     ...(config.nodeEnv === "production"
-      ? { ssl: { rejectUnauthorized: true } }
+      ? { ssl: { rejectUnauthorized: false } }
       : {}),
   });
 }
