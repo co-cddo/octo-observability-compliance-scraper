@@ -13,7 +13,7 @@ GitHub: `https://github.com/co-cddo/octo-observability-compliance-scraper`
 - **Express server** (`src/server/`) — GOV.UK Frontend UI with SSO auth
 - **pg-boss worker** (`src/worker/`) — PostgreSQL-backed job queue, runs alongside the server in a single process via `src/main.ts`
 - **Scraper** (`src/scraper/`) — Playwright + Bedrock extraction pipeline
-- **Insights** (`src/insights/`) — text-to-SQL chatbot using Bedrock Converse API (Sonnet 4.6)
+- **Insights** (`src/insights/`) — text-to-SQL chatbot using Bedrock Converse API (Claude Haiku 4.5)
 
 The daily cron (2 AM London) enqueues one job per service. Jobs are processed sequentially (one Chromium instance at a time). Manual triggers available via `/trigger` (all services), `/services/:slug/trigger` (single service), and `/services/:slug/trigger/:type` (single service, specific scrape type).
 

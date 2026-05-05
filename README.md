@@ -28,7 +28,7 @@ Scrapes UK government digital service websites to extract reported compliance da
 - Docker (for local Postgres)
 - AWS credentials with Bedrock access (see [Bedrock setup](#bedrock-setup) below)
 - DSIT Internal Access SSO credentials (for the web UI)
-- [gitleaks](https://github.com/gitleaks/gitleaks) (optional, for pre-commit secret scanning) — `brew install gitleaks` on macOS
+- [gitleaks](https://github.com/gitleaks/gitleaks) for pre-commit secret scanning — `brew install gitleaks` on macOS
 
 ## Setup
 
@@ -41,8 +41,8 @@ cp .env.example .env
 # Edit .env with your settings (see Environment variables below)
 
 docker compose up postgres -d
-npm run db:migrate
-npm run db:seed
+pnpm run db:migrate
+pnpm run db:seed
 ```
 
 > **Note:** `.npmrc` sets `ignore-scripts=true` to prevent install-time script execution.
@@ -56,9 +56,9 @@ npm run db:seed
 ## Running locally
 
 ```bash
-npm run dev
-npm run dev:watch
-npm run build && npm start
+pnpm run dev
+pnpm run dev:watch
+pnpm run build && pnpm start
 ```
 
 Opens at [http://localhost:3000](http://localhost:3000)
@@ -88,7 +88,6 @@ GitHub Actions workflows run on every PR and on push to `main`:
 
 - **PR checks:** gitleaks, commitlint, ESLint, unit tests, Playwright e2e, Docker build
 - **Deploy (push to main):** lint + test + e2e, then build and push image to GitHub Container Registry (`ghcr.io/co-cddo/octo-observability-compliance-scraper`)
-- **Release Please:** automatically creates release PRs from conventional commits, bumps `package.json` version and generates a changelog
 
 No GitHub secrets or variables are required — all workflows use the built-in `GITHUB_TOKEN`.
 
@@ -147,6 +146,7 @@ server/app.ts (Express + GOV.UK Frontend)
 | `no_link_found` | No relevant link found in page footer |
 | `scrape_error` | Navigation failed, auth wall, or CAPTCHA detected |
 | `bedrock_error` | Page found but Bedrock call or JSON parsing failed |
+| `no_data_extracted` | Page found but Bedrock returned empty/no structured data |
 
 Results are **append-only** — each run adds a new row. The UI always shows the latest result per service.
 
