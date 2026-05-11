@@ -37,8 +37,8 @@ The daily cron (2 AM London) enqueues one job per service. Jobs are processed se
 ## Running locally
 
 ```bash
-# Start Postgres
-docker compose up postgres -d
+# Start Postgres and OIDC mock
+docker compose up postgres oidc-mock -d
 
 # Run migrations and seed
 npm run db:migrate
@@ -56,8 +56,9 @@ Required `.env` (see `.env.example`):
 ```
 DATABASE_URL=postgres://scraper:scraper@localhost:5432/compliance_scraper
 SESSION_SECRET=<any long random string>
-SSO_CLIENT_ID=<from Internal Access>
-SSO_CLIENT_SECRET=<from Internal Access>
+SSO_ISSUER=http://localhost:8090/default
+SSO_CLIENT_ID=test-client
+SSO_CLIENT_SECRET=test-secret
 APP_URL=http://localhost:3000
 ```
 

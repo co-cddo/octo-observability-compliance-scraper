@@ -20,7 +20,7 @@
     <div class="govuk-grid-column-one-quarter">
       <div class="govuk-form-group govuk-!-margin-bottom-2">
         <label class="govuk-label govuk-label--s" for="status">Stated compliance</label>
-        <select class="govuk-select govuk-!-width-full" id="status" name="status" onchange="this.form.submit()">
+        <select class="govuk-select govuk-!-width-full" id="status" name="status" data-auto-submit>
           <option value="">All statuses</option>
           <option value="fully_compliant" {% if currentFilters.status == 'fully_compliant' %}selected{% endif %}>Fully compliant</option>
           <option value="partially_compliant" {% if currentFilters.status == 'partially_compliant' %}selected{% endif %}>Partially compliant</option>
@@ -32,7 +32,7 @@
     <div class="govuk-grid-column-one-quarter">
       <div class="govuk-form-group govuk-!-margin-bottom-2">
         <label class="govuk-label govuk-label--s" for="organisation">Organisation</label>
-        <select class="govuk-select govuk-!-width-full" id="organisation" name="organisation" onchange="this.form.submit()">
+        <select class="govuk-select govuk-!-width-full" id="organisation" name="organisation" data-auto-submit>
           <option value="">All organisations</option>
           {% for org in organisations %}
             <option value="{{ org }}" {% if currentFilters.organisation == org %}selected{% endif %}>{{ org }}</option>
@@ -41,7 +41,7 @@
       </div>
     </div>
     {% if currentFilters.status or currentFilters.organisation %}
-    <div class="govuk-grid-column-one-quarter" style="padding-top: 30px;">
+    <div class="govuk-grid-column-one-quarter govuk-!-padding-top-6">
       <a href="/accessibility" class="govuk-link">Clear filters</a>
     </div>
     {% endif %}

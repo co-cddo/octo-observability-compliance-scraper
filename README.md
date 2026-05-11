@@ -56,12 +56,18 @@ pnpm run db:seed
 ## Running locally
 
 ```bash
+# Start Postgres and OIDC mock
+docker compose up postgres oidc-mock -d
+
+# Run migrations and seed (first time only)
+pnpm run db:migrate
+pnpm run db:seed
+
+# Start the app
 pnpm run dev
-pnpm run dev:watch
-pnpm run build && pnpm start
 ```
 
-Opens at [http://localhost:3000](http://localhost:3000)
+Opens at [http://localhost:3000](http://localhost:3000). Sign-in uses a local mock identity provider (auto-login, no credentials needed).
 
 ### Docker Compose
 
