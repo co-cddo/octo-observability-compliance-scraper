@@ -128,7 +128,7 @@ export async function scrapePrivacy(
     }
 
     let mainText = await extractMainText(page);
-    if (mainText.length === 0) {
+    if (mainText.trim().length === 0) {
       try {
         await page.waitForFunction(
           () => {
@@ -147,7 +147,7 @@ export async function scrapePrivacy(
       }
     }
     console.log(
-      `[privacy] ${service.name}: extracted ${mainText.length} chars`,
+      `[privacy] ${service.name}: extracted ${mainText.trim().length} chars`,
     );
     const bedrockResult = await extractPrivacyFromBedrock(mainText, config);
 

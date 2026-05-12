@@ -154,7 +154,10 @@ export async function scrapeAccessibility(
     }
 
     let mainText = await extractMainText(page);
-    if (mainText.length === 0) {
+    if (mainText.trim().length === 0) {
+      console.log(
+        `[accessibility] ${service.name}: empty content on ${page.url()}, waiting for render...`,
+      );
       try {
         await page.waitForFunction(
           () => {
@@ -173,7 +176,7 @@ export async function scrapeAccessibility(
       }
     }
     console.log(
-      `[accessibility] ${service.name}: extracted ${mainText.length} chars`,
+      `[accessibility] ${service.name}: extracted ${mainText.trim().length} chars from ${page.url()}`,
     );
     const bedrockResult = await extractAccessibilityFromBedrock(
       mainText,

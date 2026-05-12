@@ -139,7 +139,7 @@ export async function scrapeCookies(
     }
 
     let fullText = await extractFullText(page);
-    if (fullText.length === 0) {
+    if (fullText.trim().length === 0) {
       try {
         await page.waitForFunction(
           () => (document.body.textContent?.trim()?.length ?? 0) > 100,
@@ -151,7 +151,7 @@ export async function scrapeCookies(
       }
     }
     console.log(
-      `[cookies] ${service.name}: extracted ${fullText.length} chars`,
+      `[cookies] ${service.name}: extracted ${fullText.trim().length} chars`,
     );
     const bedrockResult = await extractCookiesFromBedrock(
       fullText,
