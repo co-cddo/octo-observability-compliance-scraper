@@ -153,7 +153,25 @@ export async function scrapeAccessibility(
       });
     }
 
-    const mainText = await extractMainText(page);
+    let mainText = await extractMainText(page);
+    if (mainText.length === 0) {
+      try {
+        await page.waitForFunction(
+          () => {
+            const el =
+              document.querySelector("main") ??
+              document.getElementById("main-content") ??
+              document.querySelector('[role="main"]') ??
+              document.body;
+            return (el?.textContent?.trim()?.length ?? 0) > 100;
+          },
+          { timeout: 10000 },
+        );
+        mainText = await extractMainText(page);
+      } catch {
+        // content never appeared
+      }
+    }
     console.log(
       `[accessibility] ${service.name}: extracted ${mainText.length} chars`,
     );

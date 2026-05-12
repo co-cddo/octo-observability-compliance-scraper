@@ -138,7 +138,18 @@ export async function scrapeCookies(
       });
     }
 
-    const fullText = await extractFullText(page);
+    let fullText = await extractFullText(page);
+    if (fullText.length === 0) {
+      try {
+        await page.waitForFunction(
+          () => (document.body.textContent?.trim()?.length ?? 0) > 100,
+          { timeout: 10000 },
+        );
+        fullText = await extractFullText(page);
+      } catch {
+        // content never appeared
+      }
+    }
     console.log(
       `[cookies] ${service.name}: extracted ${fullText.length} chars`,
     );

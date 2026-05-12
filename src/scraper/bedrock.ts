@@ -300,7 +300,9 @@ export async function extractMainText(
       document.getElementById("main-content") ??
       document.querySelector('[role="main"]') ??
       document.body;
-    return main?.innerText ?? "";
+    const text = main?.innerText ?? "";
+    if (text.length > 0) return text;
+    return main?.textContent?.trim() ?? "";
   });
 }
 
@@ -308,6 +310,8 @@ export async function extractFullText(
   page: import("playwright").Page,
 ): Promise<string> {
   return page.evaluate((): string => {
-    return document.body.innerText;
+    const text = document.body.innerText;
+    if (text.length > 0) return text;
+    return document.body.textContent?.trim() ?? "";
   });
 }
