@@ -175,11 +175,13 @@ export async function scrapeAccessibility(
         // content never appeared
       }
     }
+    const htmlLength = (await page.content()).length;
+    const textLength = mainText.trim().length;
     console.log(
-      `[accessibility] ${service.name}: extracted ${mainText.trim().length} chars from ${page.url()}`,
+      `[accessibility] ${service.name}: extracted ${textLength} chars (html: ${htmlLength}) from ${page.url()}`,
     );
 
-    if (mainText.trim().length === 0) {
+    if (textLength === 0) {
       return insertAccessibilityResult(pool, {
         ...base,
         ...empty,
@@ -215,9 +217,21 @@ export async function scrapeAccessibility(
       !extraction.complianceStatus &&
       !extraction.wcagStandard
     ) {
+      const partialContent = textLength < 500;
       console.log(
-        `[accessibility] ${service.name}: statement detected but no structured data extracted (${mainText.trim().length} chars). Full content:\n${mainText.trim()}`,
+        `[accessibility] ${service.name}: statement detected but no structured data (${textLength} chars, html: ${htmlLength}). Content: ${JSON.stringify(mainText.trim())}`,
       );
+
+      if (partialContent) {
+        return insertAccessibilityResult(pool, {
+          ...base,
+          ...empty,
+          scrapeStatus: "scrape_error",
+          errorMessage: `Partial content received (${textLength} chars) — page likely blocked or truncated by WAF`,
+          accessibilityStatementUrl: page.url(),
+          rawBedrockResponse: rawResponse,
+        });
+      }
     }
 
     return insertAccessibilityResult(pool, {
