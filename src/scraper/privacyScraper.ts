@@ -66,13 +66,25 @@ export async function scrapePrivacy(
       // session warm-up best-effort
     }
 
+    let response: import("playwright").Response | null = null;
     try {
-      await page.goto(effectiveUrl, {
+      response = await page.goto(effectiveUrl, {
         waitUntil: "networkidle",
         timeout: config.playwrightTimeout,
       });
     } catch {
       // proceed with whatever loaded
+    }
+
+    if (response && response.status() >= 400) {
+      return insertPrivacyResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage: `HTTP ${response.status()} fetching privacy notice`,
+        privacyPolicyUrl: effectiveUrl,
+        rawBedrockResponse: null,
+      });
     }
 
     const deeperLink = await findDeeperStatementLink(
@@ -81,13 +93,24 @@ export async function scrapePrivacy(
       "privacy",
     );
     if (deeperLink) {
+      let deeperResponse: import("playwright").Response | null = null;
       try {
-        await page.goto(deeperLink.href, {
+        deeperResponse = await page.goto(deeperLink.href, {
           waitUntil: "networkidle",
           timeout: config.playwrightTimeout,
         });
       } catch {
         // proceed with whatever loaded
+      }
+      if (deeperResponse && deeperResponse.status() >= 400) {
+        try {
+          await page.goto(effectiveUrl, {
+            waitUntil: "networkidle",
+            timeout: config.playwrightTimeout,
+          });
+        } catch {
+          // fall back to whatever loaded
+        }
       }
     }
 
@@ -105,6 +128,9 @@ export async function scrapePrivacy(
     }
 
     const mainText = await extractMainText(page);
+    console.log(
+      `[privacy] ${service.name}: extracted ${mainText.length} chars`,
+    );
     const bedrockResult = await extractPrivacyFromBedrock(mainText, config);
 
     if ("error" in bedrockResult) {
