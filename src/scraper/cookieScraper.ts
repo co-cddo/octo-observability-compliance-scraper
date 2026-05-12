@@ -153,6 +153,19 @@ export async function scrapeCookies(
     console.log(
       `[cookies] ${service.name}: extracted ${fullText.trim().length} chars`,
     );
+
+    if (fullText.trim().length === 0) {
+      return insertCookieResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage:
+          "Page inaccessible from scraper — returned empty content (possible WAF block)",
+        cookiePolicyUrl: page.url(),
+        rawBedrockResponse: null,
+      });
+    }
+
     const bedrockResult = await extractCookiesFromBedrock(
       fullText,
       setCookieHeaders,

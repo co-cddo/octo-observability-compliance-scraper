@@ -178,6 +178,19 @@ export async function scrapeAccessibility(
     console.log(
       `[accessibility] ${service.name}: extracted ${mainText.trim().length} chars from ${page.url()}`,
     );
+
+    if (mainText.trim().length === 0) {
+      return insertAccessibilityResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage:
+          "Page inaccessible from scraper — returned empty content (possible WAF block)",
+        accessibilityStatementUrl: page.url(),
+        rawBedrockResponse: null,
+      });
+    }
+
     const bedrockResult = await extractAccessibilityFromBedrock(
       mainText,
       config,
@@ -195,7 +208,7 @@ export async function scrapeAccessibility(
     }
 
     const { extraction, rawResponse } = bedrockResult;
-    const isEmpty = !extraction.complianceStatus && !extraction.wcagStandard;
+    const isEmpty = !extraction.isAccessibilityStatement;
 
     return insertAccessibilityResult(pool, {
       ...base,

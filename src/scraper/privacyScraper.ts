@@ -149,6 +149,19 @@ export async function scrapePrivacy(
     console.log(
       `[privacy] ${service.name}: extracted ${mainText.trim().length} chars`,
     );
+
+    if (mainText.trim().length === 0) {
+      return insertPrivacyResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage:
+          "Page inaccessible from scraper — returned empty content (possible WAF block)",
+        privacyPolicyUrl: page.url(),
+        rawBedrockResponse: null,
+      });
+    }
+
     const bedrockResult = await extractPrivacyFromBedrock(mainText, config);
 
     if ("error" in bedrockResult) {
