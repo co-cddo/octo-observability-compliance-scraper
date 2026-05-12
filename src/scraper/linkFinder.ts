@@ -183,10 +183,10 @@ export async function findDeeperStatementLink(
     const currentHost = new URL(currentUrl).hostname;
     const matchingLinks = resolved.filter((l) => {
       try {
-        return (
-          new URL(l.href).hostname === currentHost &&
-          new RegExp(substringPattern, "i").test(l.text)
-        );
+        const url = new URL(l.href);
+        if (url.hostname !== currentHost) return false;
+        if (url.pathname.includes("/contact/")) return false;
+        return new RegExp(substringPattern, "i").test(l.text);
       } catch {
         return false;
       }
