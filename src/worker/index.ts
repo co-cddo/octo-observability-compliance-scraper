@@ -196,25 +196,45 @@ export async function startWorker(): Promise<void> {
 
         const activeBrowser = await ensureBrowser();
 
+        let scrapeResult: {
+          scrapeStatus: string;
+          errorMessage?: string | null;
+        } = { scrapeStatus: "success" };
+
         if (queueName === SCRAPE_ACCESSIBILITY_JOB) {
           console.log(`[worker] Scraping accessibility: ${svc.name}`);
-          const result = await scrapeAccessibility(
+          scrapeResult = await scrapeAccessibility(
             svc,
             activeBrowser,
             pool,
             config,
           );
           console.log(
-            `[worker] Accessibility: ${result.scrapeStatus} — ${svc.name}`,
+            `[worker] Accessibility: ${scrapeResult.scrapeStatus} — ${svc.name}`,
           );
         } else if (queueName === SCRAPE_COOKIES_JOB) {
           console.log(`[worker] Scraping cookies: ${svc.name}`);
-          const result = await scrapeCookies(svc, activeBrowser, pool, config);
-          console.log(`[worker] Cookies: ${result.scrapeStatus} — ${svc.name}`);
+          scrapeResult = await scrapeCookies(svc, activeBrowser, pool, config);
+          console.log(
+            `[worker] Cookies: ${scrapeResult.scrapeStatus} — ${svc.name}`,
+          );
         } else if (queueName === SCRAPE_PRIVACY_JOB) {
           console.log(`[worker] Scraping privacy: ${svc.name}`);
-          const result = await scrapePrivacy(svc, activeBrowser, pool, config);
-          console.log(`[worker] Privacy: ${result.scrapeStatus} — ${svc.name}`);
+          scrapeResult = await scrapePrivacy(svc, activeBrowser, pool, config);
+          console.log(
+            `[worker] Privacy: ${scrapeResult.scrapeStatus} — ${svc.name}`,
+          );
+        }
+
+        if (
+          scrapeResult.scrapeStatus === "scrape_error" &&
+          scrapeResult.errorMessage?.includes("has been closed")
+        ) {
+          console.log(
+            `[worker] Browser crash detected for ${svc.name}, failing job for retry`,
+          );
+          await boss.fail(queueName, job.id);
+          return;
         }
 
         await boss.complete(queueName, job.id);
