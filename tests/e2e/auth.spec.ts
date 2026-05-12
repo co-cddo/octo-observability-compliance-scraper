@@ -3,9 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("authentication flow", () => {
   test("sign in via OIDC mock and access protected page", async ({ page }) => {
     await page.goto("/");
-    await page
-      .getByRole("button", { name: "Sign in with Internal Access" })
-      .click();
+    await page.getByRole("button", { name: "Sign in" }).click();
 
     await page.waitForURL("**/accessibility");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -21,17 +19,13 @@ test.describe("authentication flow", () => {
     await page.goto("/services");
     await expect(page).toHaveURL(/\/$/);
 
-    await page
-      .getByRole("button", { name: "Sign in with Internal Access" })
-      .click();
+    await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL("**/services");
   });
 
   test("logout clears session", async ({ page }) => {
     await page.goto("/");
-    await page
-      .getByRole("button", { name: "Sign in with Internal Access" })
-      .click();
+    await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL("**/accessibility");
 
     await page.getByRole("link", { name: "Sign out" }).click();
