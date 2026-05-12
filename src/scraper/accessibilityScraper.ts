@@ -210,6 +210,16 @@ export async function scrapeAccessibility(
     const { extraction, rawResponse } = bedrockResult;
     const isEmpty = !extraction.isAccessibilityStatement;
 
+    if (
+      extraction.isAccessibilityStatement &&
+      !extraction.complianceStatus &&
+      !extraction.wcagStandard
+    ) {
+      console.log(
+        `[accessibility] ${service.name}: statement detected but no structured data extracted (${mainText.trim().length} chars). Full content:\n${mainText.trim()}`,
+      );
+    }
+
     return insertAccessibilityResult(pool, {
       ...base,
       scrapeStatus: isEmpty ? "no_data_extracted" : "success",
