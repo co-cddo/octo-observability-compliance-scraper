@@ -52,7 +52,7 @@
         {% else %}
           Discovered automatically
         {% endif %}
-        — {{ urlData.createdAt | string | truncate(10, true, '') }}
+        — {{ urlData.createdAt | date }}
       </span>
     {% elif urlData %}
       <strong class="govuk-tag govuk-tag--grey">{{ urlData.status | replace("_", " ") | capitalize }}</strong>
@@ -90,7 +90,7 @@
           <tbody class="govuk-table__body">
             {% for h in history %}
             <tr class="govuk-table__row">
-              <td class="govuk-table__cell govuk-body-s">{{ h.createdAt | string | truncate(10, true, '') }}</td>
+              <td class="govuk-table__cell govuk-body-s">{{ h.createdAt | date }}</td>
               <td class="govuk-table__cell govuk-body-s">{{ h.url | truncate(60) if h.url else '—' }}</td>
               <td class="govuk-table__cell">{{ h.source }}</td>
               <td class="govuk-table__cell">{{ h.status }}</td>
@@ -189,7 +189,7 @@
         <tbody class="govuk-table__body">
           {% for r in accessibility.history %}
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | date }}</td>
             <td class="govuk-table__cell">{{ r.scrapeStatus }}</td>
             <td class="govuk-table__cell">{{ r.complianceStatus or '—' }}</td>
           </tr>
@@ -270,7 +270,7 @@
         <tbody class="govuk-table__body">
           {% for r in cookies.history %}
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | date }}</td>
             <td class="govuk-table__cell">{{ r.scrapeStatus }}</td>
             <td class="govuk-table__cell">{% if r.consentMechanismPresent %}Yes{% elif r.consentMechanismPresent === false %}No{% else %}—{% endif %}</td>
           </tr>
@@ -345,7 +345,7 @@
         <tbody class="govuk-table__body">
           {% for r in privacy.history %}
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+            <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | date }}</td>
             <td class="govuk-table__cell">{{ r.scrapeStatus }}</td>
             <td class="govuk-table__cell">{{ r.dataControllers[0].name if r.dataControllers and r.dataControllers.length > 0 else '—' }}</td>
           </tr>
