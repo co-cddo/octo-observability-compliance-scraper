@@ -81,6 +81,8 @@ jobs:
         with:
           persist-credentials: false
       - run: docker compose --profile test up e2e-test --build --abort-on-container-exit
+      - if: failure()
+        run: docker compose logs compliance-scraper
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
