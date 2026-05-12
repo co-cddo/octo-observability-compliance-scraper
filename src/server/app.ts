@@ -68,6 +68,28 @@ export function createApp(
     express: app,
   });
 
+  njkEnv.addFilter("date", (val: unknown) => {
+    if (!val) return "—";
+    const d = val instanceof Date ? val : new Date(String(val));
+    if (isNaN(d.getTime())) return String(val);
+    const display = d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const full = d.toLocaleString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    return new nunjucks.runtime.SafeString(
+      `<time datetime="${d.toISOString()}" title="${full}">${display}</time>`,
+    );
+  });
+
   app.set("view engine", "njk");
 
   app.use(express.json());

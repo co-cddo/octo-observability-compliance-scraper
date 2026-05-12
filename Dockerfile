@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/pw-browsers
-RUN npx playwright@1 install chromium
+RUN npx playwright@1.59.1 install chromium
 
 FROM node:${NODE_IMAGE_TAG} AS build
 

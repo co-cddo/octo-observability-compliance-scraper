@@ -42,6 +42,7 @@ export type ComplianceUrlInsert = Omit<ComplianceUrl, "id" | "createdAt">;
 // --- Accessibility ---
 
 export type AccessibilityBedrockExtraction = {
+  isAccessibilityStatement: boolean;
   wcagStandard: string | null;
   complianceStatus: ComplianceStatus | null;
   datePrepared: string | null;

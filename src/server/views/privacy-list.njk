@@ -71,7 +71,7 @@
       </td>
       <td class="govuk-table__cell govuk-body-s">{{ r.legalBasis or '—' }}</td>
       <td class="govuk-table__cell govuk-body-s">{{ r.lastUpdatedDate or '—' }}</td>
-      <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+      <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | date }}</td>
     </tr>
     {% endfor %}
   </tbody>

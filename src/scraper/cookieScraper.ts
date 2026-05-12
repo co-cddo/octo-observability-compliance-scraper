@@ -77,13 +77,25 @@ export async function scrapeCookies(
       }
     });
 
+    let response: import("playwright").Response | null = null;
     try {
-      await page.goto(effectiveUrl, {
+      response = await page.goto(effectiveUrl, {
         waitUntil: "networkidle",
         timeout: config.playwrightTimeout,
       });
     } catch {
       // proceed with whatever loaded
+    }
+
+    if (response && response.status() >= 400) {
+      return insertCookieResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage: `HTTP ${response.status()} fetching cookie policy`,
+        cookiePolicyUrl: effectiveUrl,
+        rawBedrockResponse: null,
+      });
     }
 
     const deeperLink = await findDeeperStatementLink(
@@ -92,13 +104,24 @@ export async function scrapeCookies(
       "cookies",
     );
     if (deeperLink) {
+      let deeperResponse: import("playwright").Response | null = null;
       try {
-        await page.goto(deeperLink.href, {
+        deeperResponse = await page.goto(deeperLink.href, {
           waitUntil: "networkidle",
           timeout: config.playwrightTimeout,
         });
       } catch {
         // proceed with whatever loaded
+      }
+      if (deeperResponse && deeperResponse.status() >= 400) {
+        try {
+          await page.goto(effectiveUrl, {
+            waitUntil: "networkidle",
+            timeout: config.playwrightTimeout,
+          });
+        } catch {
+          // fall back to whatever loaded
+        }
       }
     }
 
@@ -115,7 +138,34 @@ export async function scrapeCookies(
       });
     }
 
-    const fullText = await extractFullText(page);
+    let fullText = await extractFullText(page);
+    if (fullText.trim().length === 0) {
+      try {
+        await page.waitForFunction(
+          () => (document.body.textContent?.trim()?.length ?? 0) > 100,
+          { timeout: 10000 },
+        );
+        fullText = await extractFullText(page);
+      } catch {
+        // content never appeared
+      }
+    }
+    console.log(
+      `[cookies] ${service.name}: extracted ${fullText.trim().length} chars`,
+    );
+
+    if (fullText.trim().length === 0) {
+      return insertCookieResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage:
+          "Page inaccessible from scraper — returned empty content (possible WAF block)",
+        cookiePolicyUrl: page.url(),
+        rawBedrockResponse: null,
+      });
+    }
+
     const bedrockResult = await extractCookiesFromBedrock(
       fullText,
       setCookieHeaders,

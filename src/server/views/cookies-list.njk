@@ -74,7 +74,7 @@
       </td>
       <td class="govuk-table__cell">{{ r.consentFramework or '—' }}</td>
       <td class="govuk-table__cell govuk-body-s">{{ r.analyticsTools | join(', ') if r.analyticsTools.length > 0 else '—' }}</td>
-      <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | string | truncate(10, true, '') }}</td>
+      <td class="govuk-table__cell govuk-body-s">{{ r.scrapedAt | date }}</td>
     </tr>
     {% endfor %}
   </tbody>

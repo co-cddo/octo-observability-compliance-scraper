@@ -92,13 +92,25 @@ export async function scrapeAccessibility(
       // session warm-up best-effort
     }
 
+    let response: import("playwright").Response | null = null;
     try {
-      await page.goto(effectiveUrl, {
+      response = await page.goto(effectiveUrl, {
         waitUntil: "networkidle",
         timeout: config.playwrightTimeout,
       });
     } catch {
       // proceed with whatever loaded
+    }
+
+    if (response && response.status() >= 400) {
+      return insertAccessibilityResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage: `HTTP ${response.status()} fetching accessibility statement`,
+        accessibilityStatementUrl: effectiveUrl,
+        rawBedrockResponse: null,
+      });
     }
 
     const deeperLink = await findDeeperStatementLink(
@@ -107,13 +119,24 @@ export async function scrapeAccessibility(
       "accessibility",
     );
     if (deeperLink) {
+      let deeperResponse: import("playwright").Response | null = null;
       try {
-        await page.goto(deeperLink.href, {
+        deeperResponse = await page.goto(deeperLink.href, {
           waitUntil: "networkidle",
           timeout: config.playwrightTimeout,
         });
       } catch {
         // proceed with whatever loaded
+      }
+      if (deeperResponse && deeperResponse.status() >= 400) {
+        try {
+          await page.goto(effectiveUrl, {
+            waitUntil: "networkidle",
+            timeout: config.playwrightTimeout,
+          });
+        } catch {
+          // fall back to whatever loaded
+        }
       }
     }
 
@@ -130,7 +153,46 @@ export async function scrapeAccessibility(
       });
     }
 
-    const mainText = await extractMainText(page);
+    let mainText = await extractMainText(page);
+    if (mainText.trim().length === 0) {
+      console.log(
+        `[accessibility] ${service.name}: empty content on ${page.url()}, waiting for render...`,
+      );
+      try {
+        await page.waitForFunction(
+          () => {
+            const el =
+              document.querySelector("main") ??
+              document.getElementById("main-content") ??
+              document.querySelector('[role="main"]') ??
+              document.body;
+            return (el?.textContent?.trim()?.length ?? 0) > 100;
+          },
+          { timeout: 10000 },
+        );
+        mainText = await extractMainText(page);
+      } catch {
+        // content never appeared
+      }
+    }
+    const htmlLength = (await page.content()).length;
+    const textLength = mainText.trim().length;
+    console.log(
+      `[accessibility] ${service.name}: extracted ${textLength} chars (html: ${htmlLength}) from ${page.url()}`,
+    );
+
+    if (textLength === 0) {
+      return insertAccessibilityResult(pool, {
+        ...base,
+        ...empty,
+        scrapeStatus: "scrape_error",
+        errorMessage:
+          "Page inaccessible from scraper — returned empty content (possible WAF block)",
+        accessibilityStatementUrl: page.url(),
+        rawBedrockResponse: null,
+      });
+    }
+
     const bedrockResult = await extractAccessibilityFromBedrock(
       mainText,
       config,
@@ -148,7 +210,29 @@ export async function scrapeAccessibility(
     }
 
     const { extraction, rawResponse } = bedrockResult;
-    const isEmpty = !extraction.complianceStatus && !extraction.wcagStandard;
+    const isEmpty = !extraction.isAccessibilityStatement;
+
+    if (
+      extraction.isAccessibilityStatement &&
+      !extraction.complianceStatus &&
+      !extraction.wcagStandard
+    ) {
+      const partialContent = textLength < 500;
+      console.log(
+        `[accessibility] ${service.name}: statement detected but no structured data (${textLength} chars, html: ${htmlLength}). Content: ${JSON.stringify(mainText.trim())}`,
+      );
+
+      if (partialContent) {
+        return insertAccessibilityResult(pool, {
+          ...base,
+          ...empty,
+          scrapeStatus: "scrape_error",
+          errorMessage: `Partial content received (${textLength} chars) — page likely blocked or truncated by WAF`,
+          accessibilityStatementUrl: page.url(),
+          rawBedrockResponse: rawResponse,
+        });
+      }
+    }
 
     return insertAccessibilityResult(pool, {
       ...base,

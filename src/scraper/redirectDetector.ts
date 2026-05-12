@@ -96,7 +96,14 @@ export function detectBlock(
   const requestedDomain = eTLDPlus1(requestedUrl);
   const finalDomain = eTLDPlus1(finalUrl);
   if (requestedDomain && finalDomain && requestedDomain !== finalDomain) {
-    return { blocked: true, reason: "domain_mismatch" };
+    try {
+      const finalHost = new URL(finalUrl).hostname;
+      if (finalHost !== "www.gov.uk" && finalHost !== "gov.uk") {
+        return { blocked: true, reason: "domain_mismatch" };
+      }
+    } catch {
+      return { blocked: true, reason: "domain_mismatch" };
+    }
   }
 
   // Blocked page URL patterns (geo-restriction, auth, etc.)

@@ -76,16 +76,18 @@ If a field cannot be determined from the page, use null for strings or [] for ar
 
 const ACCESSIBILITY_USER = `Extract the following fields from this accessibility statement text:
 
-1. wcagStandard — The WCAG version and level tested against. Use the format "WCAG X.X AA" (no "level" word), e.g. "WCAG 2.2 AA" or "WCAG 2.1 AA". Null if not stated.
-2. complianceStatus — One of exactly: "fully_compliant", "partially_compliant", "not_compliant". Null if not determinable.
-3. datePrepared — Date the statement was first prepared or published. Use the text as written on the page.
-4. dateReviewed — Date the statement was last reviewed or updated.
-5. dateTested — Date the service was last tested for accessibility.
-6. areasOfNonCompliance — Array of strings describing each specific area where the service does not meet WCAG. Empty array if none stated or if fully compliant.
-7. remediationCommitments — Array of strings describing commitments made to fix accessibility issues, with dates if mentioned. Empty array if none.
+1. isAccessibilityStatement — true if the page is an accessibility statement (even if informal or incomplete), false if it is clearly not (e.g. error page, login page, unrelated content).
+2. wcagStandard — The WCAG version and level tested against. Use the format "WCAG X.X AA" (no "level" word), e.g. "WCAG 2.2 AA" or "WCAG 2.1 AA". Null if not stated.
+3. complianceStatus — One of exactly: "fully_compliant", "partially_compliant", "not_compliant". Null if not determinable.
+4. datePrepared — Date the statement was first prepared or published. Use the text as written on the page.
+5. dateReviewed — Date the statement was last reviewed or updated.
+6. dateTested — Date the service was last tested for accessibility.
+7. areasOfNonCompliance — Array of strings describing each specific area where the service does not meet WCAG. Empty array if none stated or if fully compliant.
+8. remediationCommitments — Array of strings describing commitments made to fix accessibility issues, with dates if mentioned. Empty array if none.
 
 Respond with ONLY a JSON object matching this schema:
 {
+  "isAccessibilityStatement": boolean,
   "wcagStandard": string | null,
   "complianceStatus": "fully_compliant" | "partially_compliant" | "not_compliant" | null,
   "datePrepared": string | null,
@@ -114,6 +116,7 @@ export async function extractAccessibilityFromBedrock(
 
     return {
       extraction: {
+        isAccessibilityStatement: Boolean(data["isAccessibilityStatement"]),
         wcagStandard: (data["wcagStandard"] as string | null) ?? null,
         complianceStatus:
           (data["complianceStatus"] as ComplianceStatus | null) ?? null,
@@ -300,7 +303,9 @@ export async function extractMainText(
       document.getElementById("main-content") ??
       document.querySelector('[role="main"]') ??
       document.body;
-    return main?.innerText ?? "";
+    const text = main?.innerText ?? "";
+    if (text.length > 0) return text;
+    return main?.textContent?.trim() ?? "";
   });
 }
 
@@ -308,6 +313,8 @@ export async function extractFullText(
   page: import("playwright").Page,
 ): Promise<string> {
   return page.evaluate((): string => {
-    return document.body.innerText;
+    const text = document.body.innerText;
+    if (text.length > 0) return text;
+    return document.body.textContent?.trim() ?? "";
   });
 }

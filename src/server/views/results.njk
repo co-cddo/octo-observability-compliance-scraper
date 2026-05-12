@@ -101,7 +101,7 @@
         {% endif %}
       </td>
       <td class="govuk-table__cell govuk-body-s">
-        {{ r.scrapedAt | string | truncate(10, true, '') }}
+        {{ r.scrapedAt | date }}
       </td>
     </tr>
     {% endfor %}
