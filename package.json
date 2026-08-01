@@ -37,7 +37,7 @@
     "pg-boss": "^10.4.2",
     "pgsql-ast-parser": "12.0.2",
     "playwright": "^1.59.1",
-    "sanitize-html": "2.17.3"
+    "sanitize-html": "2.17.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
